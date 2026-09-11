@@ -26,8 +26,8 @@
     <h1>8 bills. 8 different stages. 8 different asks.</h1>
     <p class="lead">
       Nobody serious is fighting any of these — the holdup is almost always scheduling
-      or momentum, not persuasion. But a generic "call about ESOPs" message misdirects
-      effort on 7 of the 8. Find yours below, or browse the full list.
+      or momentum, not persuasion. H.R. 5169 is the most advanced and highest-leverage
+      ask right now, so it's front and center — the rest are below if you want to do more.
     </p>
   </div>
 </section>
@@ -35,10 +35,10 @@
 <section class="alt">
   <div class="wrap">
     <div class="zip-block">
-      <label for="zip-input">Enter your zip code to see what's actionable for you</label>
+      <label for="zip-input">Enter your zip code to see who to contact</label>
       <div class="zip-row">
         <input type="text" id="zip-input" inputmode="numeric" maxlength="5" placeholder="e.g. 30301">
-        <button class="btn" id="zip-submit" type="button">Find my bills</button>
+        <button class="btn" id="zip-submit" type="button">Find my reps</button>
       </div>
       <p class="zip-note" id="zip-note">We only use this to look up your actual House rep and senators — nothing is stored or sent anywhere else. Zip codes occasionally span more than one House district; if yours does, we'll flag it so you can double-check.</p>
     </div>
@@ -49,21 +49,10 @@
   <div class="wrap">
 
     <details class="collapsible" id="my-bills" open>
-      <summary><h2>My Bills</h2></summary>
+      <summary><h2>My Bills <span class="count-badge">(1)</span></h2></summary>
       <div id="my-bills-content" class="my-bills-content">
-        <p class="section-lead">Enter your zip code above to see which bills need your voice.</p>
-      </div>
-    </details>
-
-    <details class="collapsible" id="all-bills">
-      <summary><h2>All Bills</h2></summary>
-      <div class="all-bills-content">
-        <div class="note-box">
-          <strong>This is a manually-updated snapshot, current as of the last edit.</strong>
-          Bill numbers and stages can shift — two of the original bills in this space
-          (S. 2474 and S. 2458) were already absorbed into S. 1728 mid-stream. A live version
-          pulling directly from Congress.gov is planned for a future update.
-        </div>
+        <div id="zip-status"></div>
+        <div id="leverage-slot"></div>
 
         <!-- S.2403 / H.R.5169 -->
         <div class="bill-card" id="bill-hr5169" data-contact="house">
@@ -81,6 +70,22 @@
           <div class="contact-tags"><span class="contact-tag house">House only</span></div>
           <div class="ask-box"><strong>The ask:</strong> already passed the Senate unanimously and cleared the House Education &amp; Workforce Committee unanimously. It only needs House leadership to schedule a floor vote — ask your representative to press leadership directly.</div>
           <p class="bill-meta">Sponsor: Rep. Rick Allen (R-GA)</p>
+          <div class="person-cards-slot" data-bill="bill-hr5169" data-contact="house">
+            <p class="zip-prompt">Enter your zip above to see exactly who to call.</p>
+          </div>
+        </div>
+
+      </div>
+    </details>
+
+    <details class="collapsible" id="other-bills">
+      <summary><h2>Other Bills <span class="count-badge">(7)</span></h2></summary>
+      <div class="all-bills-content">
+        <div class="note-box">
+          <strong>This is a manually-updated snapshot, current as of the last edit.</strong>
+          Bill numbers and stages can shift — two of the original bills in this space
+          (S. 2474 and S. 2458) were already absorbed into S. 1728 mid-stream. A live version
+          pulling directly from Congress.gov is planned for a future update.
         </div>
 
         <!-- S.1728 -->
@@ -99,6 +104,9 @@
           <div class="contact-tags"><span class="contact-tag house">House only</span></div>
           <div class="ask-box"><strong>The ask:</strong> passed the Senate unanimously, but <em>no House companion bill exists yet at all</em> — a different problem than "schedule a vote." Ask your representative to introduce one, ideally someone on the Education &amp; Workforce Committee.</div>
           <p class="bill-meta">Sponsors: Sen. Bill Cassidy (R-LA), Sen. Maggie Hassan (D-NH)</p>
+          <div class="person-cards-slot" data-bill="bill-s1728" data-contact="house">
+            <p class="zip-prompt">Enter your zip above to see exactly who to call.</p>
+          </div>
         </div>
 
         <!-- S.1727 / H.R.9792 -->
@@ -117,6 +125,9 @@
           <div class="contact-tags"><span class="contact-tag senate">Senate</span><span class="contact-tag house">House</span></div>
           <div class="ask-box"><strong>The ask:</strong> stalled in the Senate HELP Committee — never got a floor vote. The House version (H.R. 9792) was just introduced and needs cosponsors. <strong>This is the one bill where contacting your senator is actually useful right now</strong> — ask them to push it out of committee. Separately, ask your representative to cosponsor H.R. 9792.</div>
           <p class="bill-meta">H.R. 9792 sponsor: Rep. Scott Perry (R-PA)</p>
+          <div class="person-cards-slot" data-bill="bill-s1727" data-contact="both">
+            <p class="zip-prompt">Enter your zip above to see exactly who to call.</p>
+          </div>
         </div>
 
         <!-- H.R.3105 / S.2461 -->
@@ -135,6 +146,9 @@
           <div class="contact-tags"><span class="contact-tag senate">Senate</span><span class="contact-tag house">House</span></div>
           <div class="ask-box"><strong>The ask:</strong> earliest-stage of the bipartisan bills — pending in the House Ways and Means Committee and the Senate Finance Committee. Ask both your representative and senator to cosponsor and push for committee movement.</div>
           <p class="bill-meta">House sponsors: Rep. Mike Kelly (R-PA), Rep. Jimmy Panetta (D-CA) &middot; Senate sponsors: Sen. Steve Daines (R-MT), Sen. Maggie Hassan (D-NH)</p>
+          <div class="person-cards-slot" data-bill="bill-hr3105" data-contact="both">
+            <p class="zip-prompt">Enter your zip above to see exactly who to call.</p>
+          </div>
         </div>
 
         <!-- American Ownership and Resilience Act -->
@@ -153,6 +167,9 @@
           <div class="contact-tags"><span class="contact-tag senate">Senate</span><span class="contact-tag house">House</span></div>
           <div class="ask-box"><strong>The ask:</strong> early-stage, pending in both chambers. Ask your representative and senator to cosponsor.</div>
           <p class="bill-meta">Sponsors: Sen. Chris Van Hollen (D-MD), Sen. Jerry Moran (R-KS), Rep. Blake Moore (R-UT), Rep. Lori Trahan (D-MA)</p>
+          <div class="person-cards-slot" data-bill="bill-aora" data-contact="both">
+            <p class="zip-prompt">Enter your zip above to see exactly who to call.</p>
+          </div>
         </div>
 
         <!-- SHARE Plan Act -->
@@ -170,6 +187,9 @@
           </div>
           <div class="contact-tags"><span class="contact-tag senate">Senate</span></div>
           <div class="ask-box"><strong>The ask:</strong> Senate-only for now — no confirmed House companion found yet. Ask your senator to cosponsor and to encourage a House companion to be introduced.</div>
+          <div class="person-cards-slot" data-bill="bill-s1101" data-contact="senate">
+            <p class="zip-prompt">Enter your zip above to see exactly who to call.</p>
+          </div>
         </div>
 
         <!-- H.R.5778 -->
@@ -188,6 +208,9 @@
           <div class="contact-tags"><span class="contact-tag house">House only</span></div>
           <div class="ask-box"><strong>The ask:</strong> passed the House Small Business Committee by unanimous vote (Nov. 18, 2025). No Senate companion confirmed. Ask your representative to press for a floor vote.</div>
           <p class="bill-meta">Sponsor: Rep. LaMonica McIver (D-NJ)</p>
+          <div class="person-cards-slot" data-bill="bill-hr5778" data-contact="house">
+            <p class="zip-prompt">Enter your zip above to see exactly who to call.</p>
+          </div>
         </div>
 
         <!-- H.R.2993 -->
@@ -205,6 +228,9 @@
           </div>
           <div class="contact-tags"><span class="contact-tag house">House only</span></div>
           <div class="ask-box"><strong>The ask:</strong> early stage. Ask your representative to cosponsor.</div>
+          <div class="person-cards-slot" data-bill="bill-hr2993" data-contact="house">
+            <p class="zip-prompt">Enter your zip above to see exactly who to call.</p>
+          </div>
         </div>
 
       </div>

@@ -308,34 +308,16 @@ details.collapsible .note-box,
 details.collapsible .bill-card { margin: 0 0 1.25rem; }
 details.collapsible .bill-card:last-child { margin-bottom: 0; }
 
-.my-bills-summary {
-  display: block;
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.9rem 1.1rem;
-  margin-bottom: 0.75rem;
-  text-decoration: none;
-  color: var(--text);
-}
-.my-bills-summary:hover { border-color: var(--navy); }
-.my-bills-summary .mb-top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
-.my-bills-summary .mb-number { font-weight: 800; color: var(--navy); }
-.my-bills-summary .mb-ask { font-size: 0.9rem; color: var(--text-dim); margin-top: 0.3rem; }
-.my-bills-summary .mb-leverage {
-  font-size: 0.85rem;
-  color: var(--amber);
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px dashed var(--border);
-}
-.my-bills-summary .mb-leverage strong { color: var(--amber); }
 .my-bills-state { font-weight: 700; margin-bottom: 1rem; }
 
-.my-bills-summary.personalized { cursor: default; }
-.my-bills-summary.personalized:hover { border-color: var(--border); }
-.my-bills-summary .mb-number { text-decoration: none; }
-.my-bills-summary a.mb-number:hover { text-decoration: underline; }
+.zip-prompt, .zip-generic-note {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin: 0.75rem 0 0;
+}
+
+.count-badge { font-size: 0.95rem; font-weight: 400; color: var(--text-dim); }
 
 .person-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.75rem; margin-top: 0.85rem; }
 .person-card {
@@ -366,12 +348,6 @@ details.collapsible .bill-card:last-child { margin-bottom: 0; }
 .leverage-section ul { margin: 0; padding-left: 1.2rem; }
 .leverage-section li { margin-bottom: 0.5rem; font-size: 0.92rem; }
 .leverage-section a { color: var(--navy); font-weight: 700; }
-
-.my-bills-summary .mb-leverage.matched {
-  color: var(--amber);
-  font-weight: 700;
-  border-top: 1px dashed var(--amber);
-}
 
 footer.site {
   border-top: 1px solid var(--border);
