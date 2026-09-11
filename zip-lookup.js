@@ -1,20 +1,29 @@
 // Bill metadata for the "My Bills" personalized summary.
 // contact: "house" | "senate" | "both" — matches data-contact on the full card in #all-bills.
+// leverage: set only when a SPECIFIC committee or leadership role has outsized power over
+// this bill's next step — contacting a rep/senator who actually holds that role matters far
+// more than a generic cosponsorship ask. We can't yet tell whether a given visitor's own
+// rep/senator holds it (that needs the real district-level lookup in a future update) — this
+// just flags that the distinction exists and is worth checking.
 const BILLS = [
   { id: "bill-hr5169", number: "S. 2403 / H.R. 5169", contact: "house",
-    ask: "Ask your House rep to press leadership for a floor vote." },
+    ask: "Ask your House rep to press leadership for a floor vote.",
+    leverage: "Already cleared committee. The people who actually control what happens next are House leadership (Speaker's office, Majority Leader, Rules Committee chair) — if your rep holds one of those roles, their voice counts far more than an average member's." },
   { id: "bill-s1728", number: "S. 1728", contact: "house",
-    ask: "Ask your House rep to introduce a companion bill — none exists yet." },
+    ask: "Ask your House rep to introduce a companion bill — none exists yet.",
+    leverage: "A member of the House Education & Workforce Committee is the natural person to introduce this — if that's your rep, say so explicitly." },
   { id: "bill-s1727", number: "S. 1727 / H.R. 9792", contact: "both",
     ask: "Ask your senator to push it out of committee; ask your House rep to cosponsor H.R. 9792." },
   { id: "bill-hr3105", number: "H.R. 3105 / S. 2461", contact: "both",
-    ask: "Ask your senator and House rep to cosponsor and push for committee movement." },
+    ask: "Ask your senator and House rep to cosponsor and push for committee movement.",
+    leverage: "This is a tax bill sitting in House Ways & Means and Senate Finance. Members of those two committees control whether it even gets a markup — that's far more leverage than a cosponsorship from outside them." },
   { id: "bill-aora", number: "H.R. 3248 / S. 1645", contact: "both",
     ask: "Ask your senator and House rep to cosponsor." },
   { id: "bill-s1101", number: "S. 1101", contact: "senate",
     ask: "Ask your senator to cosponsor." },
   { id: "bill-hr5778", number: "H.R. 5778", contact: "house",
-    ask: "Ask your House rep to press for a floor vote." },
+    ask: "Ask your House rep to press for a floor vote.",
+    leverage: "Already cleared the House Small Business Committee — like H.R. 5169, this now needs House leadership specifically, not another committee member." },
   { id: "bill-hr2993", number: "H.R. 2993", contact: "house",
     ask: "Ask your House rep to cosponsor." },
 ];
@@ -43,11 +52,15 @@ const ZIP3_RANGES = [
   [750, 799, "Texas"], [800, 816, "Colorado"], [820, 831, "Wyoming"],
   [832, 838, "Idaho"], [840, 847, "Utah"], [850, 865, "Arizona"],
   [870, 884, "New Mexico"], [885, 885, "Texas"], [889, 898, "Nevada"],
-  [900, 961, "California"], [967, 968, "Hawaii"], [970, 979, "Oregon"],
-  [980, 994, "Washington"], [995, 999, "Alaska"],
+  [900, 961, "California"], [967, 968, "Hawaii"], [969, 969, "Guam / Northern Mariana Islands / American Samoa"],
+  [970, 979, "Oregon"], [980, 994, "Washington"], [995, 999, "Alaska"],
 ];
 
-const NO_VOTING_MEMBER = new Set(["District of Columbia", "Puerto Rico"]);
+const NO_VOTING_MEMBER = new Set([
+  "District of Columbia",
+  "Puerto Rico",
+  "Guam / Northern Mariana Islands / American Samoa",
+]);
 
 function lookupState(zip5) {
   const prefix = parseInt(zip5.slice(0, 3), 10);
@@ -58,9 +71,32 @@ function lookupState(zip5) {
 }
 
 function contactLabel(contact, state) {
-  if (contact === "house") return `Your House rep (${state})`;
-  if (contact === "senate") return `Your senators (${state})`;
-  return `Your House rep &amp; senators (${state})`;
+  const suffix = state && state !== "both-generic" ? ` (${state})` : "";
+  if (contact === "house") return `Your House rep${suffix}`;
+  if (contact === "senate") return `Your senators${suffix}`;
+  return `Your House rep &amp; senators${suffix}`;
+}
+
+function appendBillsList(container, state) {
+  const list = document.createElement("div");
+  BILLS.forEach((bill) => {
+    const a = document.createElement("a");
+    a.className = "my-bills-summary";
+    a.href = `#${bill.id}`;
+    a.innerHTML = `
+      <div class="mb-top">
+        <span class="mb-number">${bill.number}</span>
+        <span class="contact-tag ${bill.contact === "both" ? "senate" : bill.contact}">${contactLabel(bill.contact, state)}</span>
+      </div>
+      <div class="mb-ask">${bill.ask}</div>
+      ${bill.leverage ? `<div class="mb-leverage"><strong>Extra leverage:</strong> ${bill.leverage}</div>` : ""}
+    `;
+    a.addEventListener("click", () => {
+      document.getElementById("all-bills").open = true;
+    });
+    list.appendChild(a);
+  });
+  container.appendChild(list);
 }
 
 function renderMyBills(zip5) {
@@ -68,7 +104,20 @@ function renderMyBills(zip5) {
   const state = lookupState(zip5);
 
   if (!state) {
-    container.innerHTML = `<p class="zip-error">"${zip5}" doesn't look like a recognized US zip code — double check it and try again.</p>`;
+    // The zip is validly formatted (already checked before this is called) but our
+    // approximate table doesn't cover this 3-digit prefix — could be a genuinely
+    // unused block, or a gap in this table. Don't claim the zip itself is invalid;
+    // just say we can't confirm the state, and show all 8 bills anyway since they're
+    // federal and apply regardless of state.
+    container.innerHTML = `
+      <p class="my-bills-state">Zip ${zip5}</p>
+      <div class="note-box">
+        <strong>Couldn't confirm your state</strong> from this zip with our simple
+        lookup table — that's a limitation on our end, not necessarily a problem with
+        your zip code. These bills are federal, so they're actionable for you either way.
+      </div>
+    `;
+    appendBillsList(container, "both-generic");
     return;
   }
 
@@ -85,24 +134,7 @@ function renderMyBills(zip5) {
     container.innerHTML = `<p class="my-bills-state">Zip ${zip5} — likely ${state}. Here's what's actionable for you:</p>`;
   }
 
-  const list = document.createElement("div");
-  BILLS.forEach((bill) => {
-    const a = document.createElement("a");
-    a.className = "my-bills-summary";
-    a.href = `#${bill.id}`;
-    a.innerHTML = `
-      <div class="mb-top">
-        <span class="mb-number">${bill.number}</span>
-        <span class="contact-tag ${bill.contact === "both" ? "senate" : bill.contact}">${contactLabel(bill.contact, state)}</span>
-      </div>
-      <div class="mb-ask">${bill.ask}</div>
-    `;
-    a.addEventListener("click", () => {
-      document.getElementById("all-bills").open = true;
-    });
-    list.appendChild(a);
-  });
-  container.appendChild(list);
+  appendBillsList(container, state);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

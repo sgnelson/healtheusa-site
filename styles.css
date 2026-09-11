@@ -322,6 +322,14 @@ details.collapsible .bill-card:last-child { margin-bottom: 0; }
 .my-bills-summary .mb-top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
 .my-bills-summary .mb-number { font-weight: 800; color: var(--navy); }
 .my-bills-summary .mb-ask { font-size: 0.9rem; color: var(--text-dim); margin-top: 0.3rem; }
+.my-bills-summary .mb-leverage {
+  font-size: 0.85rem;
+  color: var(--amber);
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border);
+}
+.my-bills-summary .mb-leverage strong { color: var(--amber); }
 .my-bills-state { font-weight: 700; margin-bottom: 1rem; }
 
 footer.site {
