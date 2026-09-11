@@ -60,34 +60,6 @@ function lookupStateFallback(zip5) {
   return null;
 }
 
-// --- Script generation — both a spoken call script and a written email/
-// message script, shown directly on the card (not just copyable blind) so
-// there's something to actually read before or during the call. ---
-
-function buildCallScript(billId, person, toSenate) {
-  const bill = BILLS[billId];
-  const ask = toSenate ? (bill.messageAskSenate || bill.messageAsk) : (bill.messageAskHouse || bill.messageAsk);
-  return `Hi, my name is [your name] and I'm a constituent calling from [your zip code].
-
-I'm calling to ask ${person.name} to ${ask}
-
-[Add a sentence here about why this matters to you personally.]
-
-Thank you for your time!`;
-}
-
-function buildEmailScript(billId, person, toSenate) {
-  const bill = BILLS[billId];
-  const ask = toSenate ? (bill.messageAskSenate || bill.messageAsk) : (bill.messageAskHouse || bill.messageAsk);
-  return `Dear ${person.name},
-
-I'm a constituent writing about ${bill.title}. As my representative, ${ask}
-
-[Add a sentence here about why this matters to you personally — a specific, personalized message is far more likely to be read than a form letter.]
-
-Thank you for your time and consideration.`;
-}
-
 function copyToClipboard(text, btn) {
   navigator.clipboard.writeText(text).then(() => {
     const original = btn.textContent;
@@ -98,83 +70,10 @@ function copyToClipboard(text, btn) {
   });
 }
 
-function scriptBlock(label, text) {
-  const details = document.createElement("details");
-  details.className = "script-block";
-  details.innerHTML = `
-    <summary>${label}</summary>
-    <p class="script-text">${text.replace(/\n/g, "<br>")}</p>
-    <button type="button" class="btn secondary copy-btn">Copy this</button>
-  `;
-  details.querySelector(".copy-btn").addEventListener("click", (e) => copyToClipboard(text, e.target));
-  return details;
-}
-
-function personCard(person, billId, toSenate, leverageReason) {
-  const card = document.createElement("div");
-  card.className = "person-card";
-  card.innerHTML = `
-    <div class="person-head">
-      <span class="person-name">${person.name}</span>
-      <span class="person-role">${person.area}${person.party ? " · " + person.party : ""}</span>
-      ${leverageReason ? `<span class="person-leverage">&#9733; ${leverageReason}</span>` : ""}
-    </div>
-    <a class="btn call-btn" href="tel:${(person.phone || "").replace(/[^\d+]/g, "")}">Call ${person.phone || ""}</a>
-    ${person.url ? `<a class="contact-page-link" href="${person.url}" target="_blank" rel="noopener">Or use their official contact form &rarr;</a>` : ""}
-  `;
-  card.appendChild(scriptBlock("&#128222; Call script — read before or during the call", buildCallScript(billId, person, toSenate)));
-  card.appendChild(scriptBlock("&#9993; Email / message script — for their contact form", buildEmailScript(billId, person, toSenate)));
-  return card;
-}
-
-function contactVerb(contact) {
-  if (contact === "house") return "Ask your House rep";
-  if (contact === "senate") return "Ask your senators";
-  return "Ask your House rep &amp; senators";
-}
-
-// Populate every .person-cards-slot on the page with real, named contacts.
-// leverageByBill (optional): { billId: [{person, reason}, ...] } — for a bill
-// with a confirmed leverage match, show ONLY the specific person(s) who hold
-// that leverage (e.g. just the senator who's actually on the relevant
-// committee, not both senators) and state their role explicitly on the card,
-// rather than the generic "everyone this contact-type would normally include."
-function populatePersonCards(houseRep, senators, leverageByBill) {
-  document.querySelectorAll(".person-cards-slot").forEach((slot) => {
-    const billId = slot.dataset.bill;
-    const contact = slot.dataset.contact;
-    slot.innerHTML = "";
-    const wrap = document.createElement("div");
-    wrap.className = "person-cards";
-
-    const leveraged = (leverageByBill && leverageByBill[billId]) || null;
-    if (leveraged && leveraged.length) {
-      leveraged.forEach(({ person, reason }) => {
-        wrap.appendChild(personCard(person, billId, person.area === "US Senate", reason));
-      });
-    } else {
-      if ((contact === "house" || contact === "both") && houseRep) {
-        wrap.appendChild(personCard(houseRep, billId, false));
-      }
-      if ((contact === "senate" || contact === "both")) {
-        senators.forEach((s) => wrap.appendChild(personCard(s, billId, true)));
-      }
-    }
-    if (!wrap.children.length) {
-      wrap.innerHTML = `<p class="zip-error">Couldn't find a matching representative for this bill from the lookup.</p>`;
-    }
-    slot.appendChild(wrap);
-  });
-}
-
-// Fallback: no live data, just a state-level (or fully generic) text note per slot.
-function populateGenericSlots(state) {
-  document.querySelectorAll(".person-cards-slot").forEach((slot) => {
-    const contact = slot.dataset.contact;
-    const suffix = state && state !== "both-generic" ? ` from ${state}` : "";
-    slot.innerHTML = `<p class="zip-generic-note">${contactVerb(contact)}${suffix} about this bill directly — see the ask above.</p>`;
-  });
-}
+// Note: per-bill-card contact display (individual person cards, call/email
+// scripts on each card) was removed — all script generation now happens once,
+// at the top, via the Generate Call/Email Script toolbar, combining whichever
+// bills are checked into one script per person instead of repeating per bill.
 
 // Canonical "Other Bills" order — used to restore cards to their default
 // home (and correct order) before reapplying leverage-based moves for a new
@@ -240,10 +139,11 @@ function renderLeverageSlot(allReps) {
   });
   updateCountBadges();
 
-  // Build { billId: [{person, reason}] } so populatePersonCards can show only
-  // the specific leveraged person(s) on a matched bill's card, not the full
-  // generic contact-type list (e.g. just Kaine, not Kaine + Warner, if only
-  // Kaine actually sits on the committee that bill needs).
+  // Build { billId: [{person, reason}] } — consumed by groupCheckedByPerson
+  // below so the Generate Script toolbar shows only the specific leveraged
+  // person for a matched bill (e.g. just Kaine, not Kaine + Warner, if only
+  // Kaine actually sits on the committee that bill needs), and can border
+  // their combined card orange too.
   const leverageByBill = {};
   hits.forEach((h) => {
     (leverageByBill[h.billId] ||= []).push({ person: h.person, reason: h.reason });
@@ -279,7 +179,6 @@ async function renderMyBills(zip5) {
       ${data.lowAccuracy ? `<div class="note-box"><strong>Heads up:</strong> this zip code may span more than one congressional district — we've matched you to the closest one, but double-check your House rep if you're near a district border.</div>` : ""}
     `;
     const leverageByBill = renderLeverageSlot([houseRep, ...senators].filter(Boolean));
-    populatePersonCards(houseRep, senators, leverageByBill);
     currentLookup = { live: true, houseRep, senators, leverageByBill };
   } catch (err) {
     const state = lookupStateFallback(zip5);
@@ -289,7 +188,6 @@ async function renderMyBills(zip5) {
         <div class="note-box"><strong>Couldn't look this up right now</strong> (${err.message}), and our backup table doesn't cover this zip either. These bills are federal and apply to you regardless.</div>
       `;
       document.getElementById("leverage-slot").innerHTML = "";
-      populateGenericSlots("both-generic");
       currentLookup = { live: false, state: null };
       return;
     }
@@ -306,7 +204,6 @@ async function renderMyBills(zip5) {
     }
     currentLookup = { live: false, state };
     document.getElementById("leverage-slot").innerHTML = "";
-    populateGenericSlots(state);
   }
 }
 
@@ -324,29 +221,34 @@ function updateSelectedCount() {
 
 // Groups checked bills by the specific person(s) relevant to each — reusing
 // the same leverage-aware logic as the per-card view (only the actually-
-// leveraged person for a matched bill, otherwise the generic contact-type set).
+// leveraged person for a matched bill, otherwise the generic contact-type
+// set) — and tracks *why* (leverageReasons) so the combined card can be
+// bordered orange and state the role explicitly, same as the individual
+// bill-card treatment.
 function groupCheckedByPerson(billIds, houseRep, senators, leverageByBill) {
-  const groups = new Map(); // key: "name|phone" -> {person, items: [{billId, title, ask, toSenate}]}
-  const add = (person, billId, ask, toSenate) => {
+  const groups = new Map(); // key: "name|phone" -> {person, items: [], leverageReasons: Set}
+  const add = (person, billId, ask, toSenate, leverageReason) => {
     const key = `${person.name}|${person.phone}`;
-    if (!groups.has(key)) groups.set(key, { person, items: [] });
-    groups.get(key).items.push({ billId, title: BILLS[billId].title, ask, toSenate });
+    if (!groups.has(key)) groups.set(key, { person, items: [], leverageReasons: new Set() });
+    const g = groups.get(key);
+    g.items.push({ billId, title: BILLS[billId].title, ask, toSenate });
+    if (leverageReason) g.leverageReasons.add(leverageReason);
   };
 
   billIds.forEach((billId) => {
     const bill = BILLS[billId];
     const leveraged = leverageByBill && leverageByBill[billId];
     if (leveraged && leveraged.length) {
-      leveraged.forEach(({ person }) => {
+      leveraged.forEach(({ person, reason }) => {
         const toSenate = person.area === "US Senate";
-        add(person, billId, toSenate ? (bill.messageAskSenate || bill.messageAsk) : (bill.messageAskHouse || bill.messageAsk), toSenate);
+        add(person, billId, toSenate ? (bill.messageAskSenate || bill.messageAsk) : (bill.messageAskHouse || bill.messageAsk), toSenate, reason);
       });
     } else {
       if ((bill.contact === "house" || bill.contact === "both") && houseRep) {
-        add(houseRep, billId, bill.messageAskHouse || bill.messageAsk, false);
+        add(houseRep, billId, bill.messageAskHouse || bill.messageAsk, false, null);
       }
       if (bill.contact === "senate" || bill.contact === "both") {
-        senators.forEach((s) => add(s, billId, bill.messageAskSenate || bill.messageAsk, true));
+        senators.forEach((s) => add(s, billId, bill.messageAskSenate || bill.messageAsk, true, null));
       }
     }
   });
@@ -377,14 +279,16 @@ ${list}
 Thank you for your time and consideration.`;
 }
 
-function combinedPersonCard(person, items, kind) {
+function combinedPersonCard(person, items, kind, leverageReasons) {
   const card = document.createElement("div");
-  card.className = "person-card";
+  const hasLeverage = leverageReasons && leverageReasons.size > 0;
+  card.className = "person-card" + (hasLeverage ? " has-leverage" : "");
   const script = kind === "call" ? buildCombinedCallScript(person, items) : buildCombinedEmailScript(person, items);
   card.innerHTML = `
     <div class="person-head">
       <span class="person-name">${person.name}</span>
       <span class="person-role">${person.area}${person.party ? " · " + person.party : ""}</span>
+      ${hasLeverage ? `<span class="person-leverage">&#9733; ${[...leverageReasons].join("; ")}</span>` : ""}
     </div>
     <a class="btn call-btn" href="tel:${(person.phone || "").replace(/[^\d+]/g, "")}">Call ${person.phone || ""}</a>
     ${person.url ? `<a class="contact-page-link" href="${person.url}" target="_blank" rel="noopener">Or use their official contact form &rarr;</a>` : ""}
@@ -398,6 +302,10 @@ function combinedPersonCard(person, items, kind) {
 function generateScript(kind) {
   const output = document.getElementById("script-output");
   const billIds = getCheckedBillIds();
+
+  // Mark whichever button was clicked as active (white-on-navy), clear the other.
+  document.getElementById("generate-call").classList.toggle("active", kind === "call");
+  document.getElementById("generate-email").classList.toggle("active", kind === "email");
 
   if (!billIds.length) {
     output.innerHTML = `<p class="zip-error">Check at least one bill below first.</p>`;
@@ -420,7 +328,7 @@ function generateScript(kind) {
 
   const wrap = document.createElement("div");
   wrap.className = "person-cards";
-  groups.forEach(({ person, items }) => wrap.appendChild(combinedPersonCard(person, items, kind)));
+  groups.forEach(({ person, items, leverageReasons }) => wrap.appendChild(combinedPersonCard(person, items, kind, leverageReasons)));
   output.innerHTML = "";
   output.appendChild(wrap);
   output.scrollIntoView({ behavior: "smooth", block: "nearest" });

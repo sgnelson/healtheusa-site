@@ -110,6 +110,11 @@ nav.site { display: flex; flex-wrap: wrap; }
   border: 1.5px solid var(--border);
 }
 .btn.secondary:hover { border-color: var(--navy); }
+.generate-btn.active {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}
 
 section { padding: 3rem 0; }
 section.alt { background: var(--bg-alt); }
@@ -360,6 +365,10 @@ details.collapsible .bill-card:last-child { margin-bottom: 0; }
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+.person-card.has-leverage {
+  border: 4px solid var(--amber);
+  padding: calc(0.9rem - 3px);
 }
 .person-head { display: flex; flex-direction: column; }
 .person-name { font-weight: 700; }
