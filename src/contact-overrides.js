@@ -4,8 +4,7 @@
 //
 // Built 2026-09-11 by scripts/find_contact_forms.py against all 539 current
 // members from the unitedstates/congress-legislators dataset: scrapes each
-// office's own homepage nav (both href AND visible link text — a plain href
-// keyword match isn't enough, see the Kaine/Pallone notes in that script) for
+// office's own homepage nav (both href AND visible link text) for
 // contact/email-form links, scores them, adds the dataset's own `contact_form`
 // field (when present) as one more candidate rather than an automatic
 // override, and verifies the best-scoring candidate returns 200.
@@ -14,11 +13,13 @@
 // new office after an election) and re-verify — this is a one-time scrape,
 // re-run by hand. See ROADMAP.md Phase 5 notes for options.
 //
-// 452/539 resolved this way with a real, verified link. The rest fall
-// back to a guessed `${url}/contact` below — works most of the time, but isn't
-// guaranteed to be the exact form. Most of the unresolved ones are blocked from
-// automated fetching by the shared house.gov/senate.gov WAF (not broken sites) —
-// see scripts/contact-forms-needed.tsv for the full list.
+// 455/539 resolved this way with a real, verified link. The rest fall
+// back to a guessed `${url}/contact` below (works most of the time). The
+// remaining gap is a hard wall, not a to-do: the shared house.gov/senate.gov
+// WAF (Akamai) blocks automated requests outright (curl and WebFetch both get
+// 403 on the same hosts) — a real browser visit works fine, so closing this
+// gap further needs a human to look up the link, not more automation. See
+// scripts/contact-forms-needed.tsv for the full remaining list.
 export const CONTACT_OVERRIDES = {
   "adams.house.gov": "https://adamsforms.house.gov/contact/",
   "adamsmith.house.gov": "https://adamsmith.house.gov/contact/email-me",
@@ -48,6 +49,7 @@ export const CONTACT_OVERRIDES = {
   "bera.house.gov": "https://bera.house.gov/contact/email-me",
   "bergman.house.gov": "https://bergman.house.gov/contact",
   "beyer.house.gov": "https://beyer.house.gov/contact",
+  "bice.house.gov": "https://biceforms.house.gov/contact",
   "biggs.house.gov": "https://biggs.house.gov/contact/email",
   "bilirakis.house.gov": "https://bilirakis.house.gov/contact/email",
   "bishop.house.gov": "https://bishop.house.gov/contact",
@@ -157,6 +159,7 @@ export const CONTACT_OVERRIDES = {
   "guest.house.gov": "https://guest.house.gov/contact",
   "guthrie.house.gov": "https://guthrie.house.gov/news/email",
   "gwenmoore.house.gov": "https://gwenmoore.house.gov/news/email",
+  "hageman.house.gov": "https://hageman.house.gov/contact",
   "halrogers.house.gov": "https://halrogers.house.gov/contact-hal",
   "hankjohnson.house.gov": "https://hankjohnson.house.gov/contact",
   "harder.house.gov": "https://harder.house.gov/contact",
@@ -304,6 +307,7 @@ export const CONTACT_OVERRIDES = {
   "ruiz.house.gov": "https://ruiz.house.gov/contact/email",
   "rutherford.house.gov": "https://rutherford.house.gov/EmailUS",
   "salazar.house.gov": "https://salazar.house.gov/contact",
+  "salinas.house.gov": "https://salinas.house.gov/contact",
   "sarajacobs.house.gov": "https://sarajacobs.house.gov/contact/email-me",
   "scalise.house.gov": "https://scaliseforms.house.gov/contact/",
   "scanlon.house.gov": "https://scanlon.house.gov/contact",
