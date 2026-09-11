@@ -72,9 +72,9 @@ function copyToClipboard(text, btn) {
 
 // Renders script text with the [bracketed placeholder] visually flagged in
 // red in the ON-PAGE PREVIEW only — this is a genuine limitation, not an
-// oversight: mailto: bodies and clipboard copies are plain text, so there's
-// no way to carry color into the actual email/message once it leaves this
-// page. The red here is purely to catch it before copying or sending.
+// oversight: clipboard copies are plain text, so there's no way to carry
+// color into the actual message once it's pasted elsewhere. The red here is
+// purely to catch it before copying or submitting.
 function highlightPlaceholder(text) {
   const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   return escaped
@@ -82,10 +82,18 @@ function highlightPlaceholder(text) {
     .replace(/(\[[^\]]*\])/g, '<span class="script-placeholder">$1</span>');
 }
 
-// Note: per-bill-card contact display (individual person cards, call/email
+// Note: per-bill-card contact display (individual person cards, call/form
 // scripts on each card) was removed — all script generation now happens once,
-// at the top, via the Generate Call/Email Script toolbar, combining whichever
-// bills are checked into one script per person instead of repeating per bill.
+// at the top, via the Generate Call/Contact Form Script toolbar, combining
+// whichever bills are checked into one script per person instead of
+// repeating per bill.
+//
+// There's no email option at all — 5 Calls doesn't provide a verified email
+// address for any office, and most congressional offices deliberately route
+// constituent correspondence through their web contact form specifically
+// (verification, spam control, and a mail-security protocol dating to the
+// 2001 anthrax letters) rather than a monitored inbox, so a guessed address
+// would likely just go unread even if syntactically valid.
 
 // Canonical "Other Bills" order — used to restore cards to their default
 // home (and correct order) before reapplying leverage-based moves for a new
@@ -249,7 +257,7 @@ function updateSelectedCount() {
   // a fresh Generate click is needed rather than looking at a stale result.
   document.getElementById("script-output").innerHTML = "";
   document.getElementById("generate-call").classList.remove("active");
-  document.getElementById("generate-email").classList.remove("active");
+  document.getElementById("generate-contact").classList.remove("active");
 }
 
 // Groups checked bills by the specific person(s) relevant to each — reusing
@@ -314,7 +322,7 @@ ${list}
 Thank you for your time!`;
 }
 
-function buildCombinedEmailScript(person, items) {
+function buildCombinedFormScript(person, items) {
   const list = items.map((it) => `- ${it.title}: ${it.ask}`).join("\n");
   return `Dear ${person.name},
 
@@ -330,34 +338,27 @@ function combinedPersonCard(person, items, kind, leverageReasons) {
   const card = document.createElement("div");
   const hasLeverage = leverageReasons && leverageReasons.size > 0;
   card.className = "person-card" + (hasLeverage ? " has-leverage" : "");
-  const script = kind === "call" ? buildCombinedCallScript(person, items) : buildCombinedEmailScript(person, items);
+  const script = kind === "call" ? buildCombinedCallScript(person, items) : buildCombinedFormScript(person, items);
   const telHref = `tel:${(person.phone || "").replace(/[^\d+]/g, "")}`;
 
-  // Primary action matches which script was generated — a call script should
-  // lead with Call, an email/message script should lead with their contact
-  // form (5 Calls doesn't give us a direct email address, so the contact
-  // form is the actual "send this" destination) — with the other option
-  // still available underneath, just demoted rather than hidden.
-  const primaryAction = kind === "call" || !person.url
-    ? `<a class="btn call-btn" href="${telHref}">Call ${person.phone || ""}</a>`
-    : `<a class="btn call-btn" href="${person.url}" target="_blank" rel="noopener">Open their contact form</a>`;
-  const secondaryAction = kind === "call" || !person.url
-    ? (person.url ? `<a class="contact-page-link" href="${person.url}" target="_blank" rel="noopener">Or use their official contact form &rarr;</a>` : "")
-    : `<a class="contact-page-link" href="${telHref}">Or call ${person.phone || ""} &rarr;</a>`;
+  // 5 Calls only gives us each office's homepage, not the exact "write to
+  // us" form URL (those slugs vary per office — e.g. Warner's is
+  // /contact/get-in-touch/, Kaine's is /contact/share-your-opinion — no
+  // single predictable pattern). Appending /contact gets you to that
+  // office's real contact hub, one click closer than the bare homepage,
+  // verified against a couple of real offices — not guaranteed to be the
+  // exact form for all 535, but always at least the correct official site.
+  const contactHref = person.url ? `${person.url}/contact` : null;
 
-  // Mail-app option for the email script only. We don't have a verified
-  // email address for this office (5 Calls doesn't provide one, and most
-  // congressional offices route through their web form specifically rather
-  // than publishing a direct address) — so this deliberately leaves "To"
-  // blank rather than guess one, and just pre-fills subject + body.
-  let mailtoAction = "";
-  if (kind === "email") {
-    const subject = encodeURIComponent(
-      items.length > 1 ? "Constituent message — multiple ESOP bills" : `Constituent message — ${items[0].title}`
-    );
-    const body = encodeURIComponent(script);
-    mailtoAction = `<a class="contact-page-link" href="mailto:?subject=${subject}&body=${body}">Or open in your mail app (add their address yourself — we don't have a verified one) &rarr;</a>`;
-  }
+  // Primary action matches which script was generated — a call script leads
+  // with Call, a contact-form script leads with their contact page (we have
+  // no verified individual email address for any office to send to instead).
+  const primaryAction = kind === "call" || !contactHref
+    ? `<a class="btn call-btn" href="${telHref}">Call ${person.phone || ""}</a>`
+    : `<a class="btn call-btn" href="${contactHref}" target="_blank" rel="noopener">Open their contact form</a>`;
+  const secondaryAction = kind === "call" || !contactHref
+    ? (contactHref ? `<a class="contact-page-link" href="${contactHref}" target="_blank" rel="noopener">Or use their official contact form &rarr;</a>` : "")
+    : `<a class="contact-page-link" href="${telHref}">Or call ${person.phone || ""} &rarr;</a>`;
 
   card.innerHTML = `
     <div class="person-head">
@@ -367,7 +368,6 @@ function combinedPersonCard(person, items, kind, leverageReasons) {
     </div>
     ${primaryAction}
     ${secondaryAction}
-    ${mailtoAction}
     <p class="script-text">${highlightPlaceholder(script)}</p>
     <button type="button" class="btn secondary copy-btn">Copy this ${kind === "call" ? "call script" : "message"}</button>
   `;
@@ -381,7 +381,7 @@ function generateScript(kind) {
 
   // Mark whichever button was clicked as active (white-on-navy), clear the other.
   document.getElementById("generate-call").classList.toggle("active", kind === "call");
-  document.getElementById("generate-email").classList.toggle("active", kind === "email");
+  document.getElementById("generate-contact").classList.toggle("active", kind === "form");
 
   if (!billIds.length) {
     output.innerHTML = `<p class="zip-error">Check at least one bill below first.</p>`;
@@ -450,5 +450,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("generate-call").addEventListener("click", () => generateScript("call"));
-  document.getElementById("generate-email").addEventListener("click", () => generateScript("email"));
+  document.getElementById("generate-contact").addEventListener("click", () => generateScript("form"));
 });
