@@ -341,14 +341,10 @@ function combinedPersonCard(person, items, kind, leverageReasons) {
   const script = kind === "call" ? buildCombinedCallScript(person, items) : buildCombinedFormScript(person, items);
   const telHref = `tel:${(person.phone || "").replace(/[^\d+]/g, "")}`;
 
-  // 5 Calls only gives us each office's homepage, not the exact "write to
-  // us" form URL (those slugs vary per office — e.g. Warner's is
-  // /contact/get-in-touch/, Kaine's is /contact/share-your-opinion — no
-  // single predictable pattern). Appending /contact gets you to that
-  // office's real contact hub, one click closer than the bare homepage,
-  // verified against a couple of real offices — not guaranteed to be the
-  // exact form for all 535, but always at least the correct official site.
-  const contactHref = person.url ? `${person.url}/contact` : null;
+  // Resolved server-side (src/contact-overrides.js): `${url}/contact` by
+  // default (verified working for 518/536 offices), with manual overrides
+  // for the offices where that pattern 404s/403s.
+  const contactHref = person.contactUrl || null;
 
   // Primary action matches which script was generated — a call script leads
   // with Call, a contact-form script leads with their contact page (we have

@@ -8,6 +8,7 @@
 // to force a fresh build/deploy so a newly-added secret actually gets picked up.
 
 import { findLeverage } from "./committee-data.js";
+import { resolveContactUrl } from "./contact-overrides.js";
 
 const FIVECALLS_BASE = "https://api.5calls.org/v1/representatives";
 
@@ -60,6 +61,7 @@ async function handleRepsLookup(request, env) {
       name: r.name,
       phone: r.phone,
       url: r.url || null,
+      contactUrl: resolveContactUrl(r.url),
       party: r.party || null,
       area: r.area, // "US House" or "US Senate"
       district: r.district || null,
