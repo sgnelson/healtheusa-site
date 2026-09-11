@@ -5,5 +5,10 @@
   "assets": {
     "directory": "./",
     "binding": "ASSETS"
-  }
+  },
+  // Without this, Cloudflare's asset layer intercepts unmatched paths (like
+  // /api/reps, which isn't a file) with its own 404 before the Worker script
+  // ever runs. Scoping to /api/* keeps static-file serving on the fast default
+  // path and only forces the Worker to run first for our actual API route.
+  "run_worker_first": ["/api/*"]
 }
