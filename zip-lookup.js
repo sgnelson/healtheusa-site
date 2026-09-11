@@ -290,7 +290,7 @@ function buildCombinedCallScript(person, items) {
 I'm calling about ${items.length > 1 ? "a few things" : "the following"}:
 ${list}
 
-[Add a sentence here about why this matters to you personally.]
+[Optional: add a sentence about why wealth disparity matters to you personally.]
 
 Thank you for your time!`;
 }
@@ -302,7 +302,7 @@ function buildCombinedEmailScript(person, items) {
 I'm a constituent writing about ${items.length > 1 ? "the following" : "this"}:
 ${list}
 
-[Add a sentence here about why this matters to you personally — a specific, personalized message is far more likely to be read than a form letter.]
+[Optional: add a sentence about why wealth disparity matters to you personally — a specific, personalized message is far more likely to be read than a form letter.]
 
 Thank you for your time and consideration.`;
 }
