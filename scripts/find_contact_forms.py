@@ -42,6 +42,8 @@ NEGATIVE_KEYWORDS = [
     "intern", "job", "career", "privacy", "sitemap", "accessibility",
     "office-locations", "offices", "casework", "district-office",
     "town-hall", "event", "subscribe", "location",
+    "wp-content", "wp-includes", ".css", ".js", ".png", ".jpg", ".svg",
+    ".woff", ".ico",
 ]
 
 HREF_RE = re.compile(r'href=["\']([^"\']+)["\']', re.I)
@@ -115,18 +117,29 @@ def resolve_one(row):
         return (name, typ, "", "", "NEEDS_MANUAL")
     hostname = urlparse(url).hostname or ""
 
-    if contact_form:
-        return (name, typ, hostname, contact_form, "dataset")
-
     html = curl_get(url)
-    if not html:
-        return (name, typ, hostname, url, "homepage_fallback")
+    candidates = find_candidates(html, url) if html else []
 
-    candidates = find_candidates(html, url)
-    for score, cand_url in candidates[:5]:
+    # The dataset's own contact_form field is authoritative-ish but often
+    # just points at the generic hub page, not the actual form (e.g. Kaine:
+    # dataset says /contact, but the site's own nav already links to the
+    # more specific /contact/share-your-opinion). Treat it as one candidate
+    # among the scraped ones, with a moderate bonus, rather than an
+    # automatic override — best-scoring verified candidate wins.
+    if contact_form:
+        candidates.append((3.5, contact_form))
+        candidates.sort(key=lambda x: -x[0])
+
+    if not candidates:
+        if not html:
+            return (name, typ, hostname, url, "homepage_fallback")
+        return (name, typ, hostname, url, "NEEDS_MANUAL")
+
+    for score, cand_url in candidates[:6]:
         code = curl_status(cand_url)
         if code == "200":
-            return (name, typ, hostname, cand_url, "scraped")
+            method = "dataset" if cand_url == contact_form else "scraped"
+            return (name, typ, hostname, cand_url, method)
 
     return (name, typ, hostname, url, "NEEDS_MANUAL")
 
