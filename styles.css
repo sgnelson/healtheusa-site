@@ -234,6 +234,18 @@ section p.section-lead {
   border: 4px solid var(--amber);
   padding: calc(1.6rem - 3px); /* keep inner content position stable vs. the thicker border */
 }
+.card-leverage-note {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--amber);
+}
+.card-leverage-note p {
+  margin: 0 0 0.4rem;
+  font-size: 0.88rem;
+  color: var(--amber);
+  font-weight: 600;
+}
+.card-leverage-note p:last-child { margin-bottom: 0; }
 .bill-card .bill-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; }
 .bill-card .bill-number { font-weight: 800; font-size: 1.15rem; color: var(--navy); }
 .bill-card .bill-title { font-weight: 600; font-size: 0.95rem; color: var(--text-dim); }
@@ -415,8 +427,6 @@ details.collapsible .bill-card:last-child { margin-bottom: 0; }
 .leverage-section h3 { margin: 0 0 0.5rem; color: var(--amber); }
 .leverage-section p { margin: 0 0 0.75rem; font-size: 0.9rem; color: var(--text-dim); }
 .leverage-section a { color: var(--navy); font-weight: 700; }
-.leverage-section ul { margin: 0; padding-left: 1.2rem; }
-.leverage-section li { margin-bottom: 0.5rem; font-size: 0.92rem; }
 
 footer.site {
   border-top: 1px solid var(--border);

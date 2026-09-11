@@ -97,6 +97,7 @@ function resetBillPlacement() {
     if (card) otherContainer.appendChild(card);
   });
   document.querySelectorAll(".bill-card.has-leverage").forEach((el) => el.classList.remove("has-leverage"));
+  document.querySelectorAll(".card-leverage-note").forEach((el) => el.remove());
   updateCountBadges();
 }
 
@@ -116,35 +117,39 @@ function renderLeverageSlot(allReps) {
   });
   if (!hits.length) { slot.innerHTML = ""; return {}; }
 
-  // Spells out *why* each bill was pulled into My Bills — this is the only
-  // place that explanation lives now that the per-bill-card contact display
-  // (which used to also state it) has been removed; the bordered card itself
-  // only shows the standard bill content, no room for the reason.
-  const items = hits.map((h) => `
-    <li>
-      <strong>${h.person.name}</strong> (your ${h.person.area === "US Senate" ? "senator" : "House rep"}) sits ${naturalRolePhrase(h.reason)} —
-      that's direct influence over <a href="#${h.billId}">${h.title}</a>.
-    </li>
-  `).join("");
-
+  // Short header only — the actual "why" now lives inside each bordered
+  // card itself (see below), not duplicated in a list up here.
   slot.innerHTML = `
     <div class="leverage-section">
       <h3>&#9733; Extra Leverage</h3>
-      <p>One or more of your representatives sit on a committee or hold a leadership role that gives them outsized influence on a specific bill — those bills have been moved into My Bills and bordered in orange below.</p>
-      <ul>${items}</ul>
+      <p>One or more of your representatives sit on a committee or hold a leadership role that gives them outsized influence on a specific bill — those bills have been moved into My Bills and bordered in orange below, with the reason stated on the card.</p>
     </div>
   `;
 
-  // Move each matched bill into My Bills, in canonical order, bordered.
+  // Group hits by bill so each card gets exactly the reason(s) that apply to it.
+  const hitsByBill = new Map();
+  hits.forEach((h) => {
+    if (!hitsByBill.has(h.billId)) hitsByBill.set(h.billId, []);
+    hitsByBill.get(h.billId).push(h);
+  });
+
+  // Move each matched bill into My Bills, in canonical order, bordered, with
+  // the reason spelled out directly on the card.
   const myBillsContainer = document.getElementById("my-bills-content");
   const matchedIds = [...new Set(hits.map((h) => h.billId))]
     .sort((a, b) => OTHER_BILLS_ORDER.indexOf(a) - OTHER_BILLS_ORDER.indexOf(b));
   matchedIds.forEach((id) => {
     const card = document.getElementById(id);
-    if (card) {
-      myBillsContainer.appendChild(card);
-      card.classList.add("has-leverage");
-    }
+    if (!card) return;
+    myBillsContainer.appendChild(card);
+    card.classList.add("has-leverage");
+
+    const note = document.createElement("div");
+    note.className = "card-leverage-note";
+    note.innerHTML = hitsByBill.get(id).map((h) => `
+      <p>&#9733; <strong>${h.person.name}</strong> (your ${h.person.area === "US Senate" ? "senator" : "House rep"}) sits ${naturalRolePhrase(h.reason)} — direct influence here.</p>
+    `).join("");
+    card.appendChild(note);
   });
   updateCountBadges();
 
