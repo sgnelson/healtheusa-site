@@ -116,13 +116,22 @@ function renderLeverageSlot(allReps) {
   });
   if (!hits.length) { slot.innerHTML = ""; return {}; }
 
-  // No itemized list here anymore — each moved card below states its own
-  // leveraged person and role explicitly (via the ★ badge on the card), so
-  // repeating the same names/reasons here would just be duplicate text.
+  // Spells out *why* each bill was pulled into My Bills — this is the only
+  // place that explanation lives now that the per-bill-card contact display
+  // (which used to also state it) has been removed; the bordered card itself
+  // only shows the standard bill content, no room for the reason.
+  const items = hits.map((h) => `
+    <li>
+      <strong>${h.person.name}</strong> (your ${h.person.area === "US Senate" ? "senator" : "House rep"}) sits ${naturalRolePhrase(h.reason)} —
+      that's direct influence over <a href="#${h.billId}">${h.title}</a>.
+    </li>
+  `).join("");
+
   slot.innerHTML = `
     <div class="leverage-section">
       <h3>&#9733; Extra Leverage</h3>
-      <p>One or more of your representatives sit on a committee or hold a leadership role that gives them outsized influence on a specific bill — those bills have been moved into My Bills and bordered in orange below, with the specific person and role called out on the card.</p>
+      <p>One or more of your representatives sit on a committee or hold a leadership role that gives them outsized influence on a specific bill — those bills have been moved into My Bills and bordered in orange below.</p>
+      <ul>${items}</ul>
     </div>
   `;
 
@@ -225,6 +234,15 @@ function updateSelectedCount() {
 // set) — and tracks *why* (leverageReasons) so the combined card can be
 // bordered orange and state the role explicitly, same as the individual
 // bill-card treatment.
+// Turns a raw reason string like "Member, Senate Finance" into a natural
+// sentence fragment: "as a Member of the Senate Finance Committee".
+function naturalRolePhrase(reason) {
+  const [title, committee] = reason.split(", ");
+  if (!committee) return `as ${reason}`;
+  const article = /^(member)$/i.test(title) ? "a " : "";
+  return `as ${article}${title} of the ${committee} Committee`;
+}
+
 function groupCheckedByPerson(billIds, houseRep, senators, leverageByBill) {
   const groups = new Map(); // key: "name|phone" -> {person, items: [], leverageReasons: Set}
   const add = (person, billId, ask, toSenate, leverageReason) => {
@@ -241,7 +259,12 @@ function groupCheckedByPerson(billIds, houseRep, senators, leverageByBill) {
     if (leveraged && leveraged.length) {
       leveraged.forEach(({ person, reason }) => {
         const toSenate = person.area === "US Senate";
-        add(person, billId, toSenate ? (bill.messageAskSenate || bill.messageAsk) : (bill.messageAskHouse || bill.messageAsk), toSenate, reason);
+        const baseAsk = toSenate ? (bill.messageAskSenate || bill.messageAsk) : (bill.messageAskHouse || bill.messageAsk);
+        // Name the actual committee, not just generic "committee" — the base
+        // ask text alone (e.g. "...push for committee movement") doesn't say
+        // which one, but we know exactly which one gave them this leverage.
+        const leverageAsk = `${baseAsk} You sit ${naturalRolePhrase(reason)}, which gives you direct influence here.`;
+        add(person, billId, leverageAsk, toSenate, reason);
       });
     } else {
       if ((bill.contact === "house" || bill.contact === "both") && houseRep) {

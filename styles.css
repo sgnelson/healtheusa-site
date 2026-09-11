@@ -415,6 +415,8 @@ details.collapsible .bill-card:last-child { margin-bottom: 0; }
 .leverage-section h3 { margin: 0 0 0.5rem; color: var(--amber); }
 .leverage-section p { margin: 0 0 0.75rem; font-size: 0.9rem; color: var(--text-dim); }
 .leverage-section a { color: var(--navy); font-weight: 700; }
+.leverage-section ul { margin: 0; padding-left: 1.2rem; }
+.leverage-section li { margin-bottom: 0.5rem; font-size: 0.92rem; }
 
 footer.site {
   border-top: 1px solid var(--border);
