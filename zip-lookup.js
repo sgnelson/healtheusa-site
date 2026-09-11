@@ -231,6 +231,13 @@ function getCheckedBillIds() {
 function updateSelectedCount() {
   const n = getCheckedBillIds().length;
   document.getElementById("selected-count").textContent = `for ${n} selected item${n === 1 ? "" : "s"}`;
+
+  // Any change to which bills are checked invalidates whatever script is
+  // currently shown — clear it and un-highlight both buttons so it's obvious
+  // a fresh Generate click is needed rather than looking at a stale result.
+  document.getElementById("script-output").innerHTML = "";
+  document.getElementById("generate-call").classList.remove("active");
+  document.getElementById("generate-email").classList.remove("active");
 }
 
 // Groups checked bills by the specific person(s) relevant to each — reusing
