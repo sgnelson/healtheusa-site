@@ -31,7 +31,7 @@ POSITIVE_KEYWORDS = [
     (r"share[-_]?your[-_]?opinion", 4),
     (r"get[-_]?in[-_]?touch", 3),
     (r"contact[-_]?form", 3),
-    (r"contact[-_]?(me|us|austin|senator|\w+)$", 2),  # e.g. contact-austin
+    (r"contact[-_]?(me|us|austin|senator|\w+)/?$", 2),  # e.g. contact-austin, contact-us/
     (r"/email\b", 2),
     (r"/contact/email", 4),
     (r"email[-_]", 2),
