@@ -55,9 +55,23 @@ function lookupStateFallback(zip5) {
   return null;
 }
 
-// --- Draft message generation ---
+// --- Script generation — both a spoken call script and a written email/
+// message script, shown directly on the card (not just copyable blind) so
+// there's something to actually read before or during the call. ---
 
-function buildMessage(billId, person, toSenate) {
+function buildCallScript(billId, person, toSenate) {
+  const bill = BILLS[billId];
+  const ask = toSenate ? (bill.messageAskSenate || bill.messageAsk) : (bill.messageAskHouse || bill.messageAsk);
+  return `Hi, my name is [your name] and I'm a constituent calling from [your zip code].
+
+I'm calling to ask ${person.name} to ${ask}
+
+[Add a sentence here about why this matters to you personally.]
+
+Thank you for your time!`;
+}
+
+function buildEmailScript(billId, person, toSenate) {
   const bill = BILLS[billId];
   const ask = toSenate ? (bill.messageAskSenate || bill.messageAsk) : (bill.messageAskHouse || bill.messageAsk);
   return `Dear ${person.name},
@@ -79,10 +93,21 @@ function copyToClipboard(text, btn) {
   });
 }
 
+function scriptBlock(label, text) {
+  const details = document.createElement("details");
+  details.className = "script-block";
+  details.innerHTML = `
+    <summary>${label}</summary>
+    <p class="script-text">${text.replace(/\n/g, "<br>")}</p>
+    <button type="button" class="btn secondary copy-btn">Copy this</button>
+  `;
+  details.querySelector(".copy-btn").addEventListener("click", (e) => copyToClipboard(text, e.target));
+  return details;
+}
+
 function personCard(person, billId, toSenate, leverageReason) {
   const card = document.createElement("div");
   card.className = "person-card";
-  const message = buildMessage(billId, person, toSenate);
   card.innerHTML = `
     <div class="person-head">
       <span class="person-name">${person.name}</span>
@@ -90,10 +115,10 @@ function personCard(person, billId, toSenate, leverageReason) {
       ${leverageReason ? `<span class="person-leverage">&#9733; ${leverageReason}</span>` : ""}
     </div>
     <a class="btn call-btn" href="tel:${(person.phone || "").replace(/[^\d+]/g, "")}">Call ${person.phone || ""}</a>
-    <button type="button" class="btn secondary copy-btn">Copy a message to personalize</button>
     ${person.url ? `<a class="contact-page-link" href="${person.url}" target="_blank" rel="noopener">Or use their official contact form &rarr;</a>` : ""}
   `;
-  card.querySelector(".copy-btn").addEventListener("click", (e) => copyToClipboard(message, e.target));
+  card.appendChild(scriptBlock("&#128222; Call script — read before or during the call", buildCallScript(billId, person, toSenate)));
+  card.appendChild(scriptBlock("&#9993; Email / message script — for their contact form", buildEmailScript(billId, person, toSenate)));
   return card;
 }
 
@@ -187,18 +212,13 @@ function renderLeverageSlot(allReps) {
   });
   if (!hits.length) { slot.innerHTML = ""; return {}; }
 
-  const items = hits.map((h) => `
-    <li>
-      <strong>${h.person.name}</strong> (your ${h.person.area === "US Senate" ? "senator" : "House rep"}) is <strong>${h.reason}</strong> —
-      that's direct influence over <a href="#${h.billId}">${h.title}</a>.
-    </li>
-  `).join("");
-
+  // No itemized list here anymore — each moved card below states its own
+  // leveraged person and role explicitly (via the ★ badge on the card), so
+  // repeating the same names/reasons here would just be duplicate text.
   slot.innerHTML = `
     <div class="leverage-section">
       <h3>&#9733; Extra Leverage</h3>
-      <p>One or more of your representatives sit on a committee or hold a leadership role that gives them outsized influence on a specific bill — those bills have been moved into My Bills and bordered in orange below.</p>
-      <ul>${items}</ul>
+      <p>One or more of your representatives sit on a committee or hold a leadership role that gives them outsized influence on a specific bill — those bills have been moved into My Bills and bordered in orange below, with the specific person and role called out on the card.</p>
     </div>
   `;
 
