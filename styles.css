@@ -390,32 +390,23 @@ details.collapsible .bill-card:last-child { margin-bottom: 0; }
 .person-card .call-btn { background: var(--navy); }
 .contact-page-link { font-size: 0.8rem; text-align: center; margin-top: 0.1rem; }
 
-.script-block {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.5rem 0.7rem;
-}
-.script-block summary {
-  cursor: pointer;
-  font-size: 0.82rem;
-  font-weight: 700;
-  list-style: none;
-}
-.script-block summary::-webkit-details-marker { display: none; }
-.script-block summary::before { content: "\25B8  "; }
-.script-block[open] summary::before { content: "\25BE  "; }
-.script-block .script-text {
+.script-text {
   font-size: 0.85rem;
   line-height: 1.5;
   color: var(--text-dim);
-  background: var(--bg-alt);
+  background: var(--bg);
   border-radius: 6px;
   padding: 0.7rem 0.8rem;
   margin: 0.5rem 0;
   white-space: normal;
 }
-.script-block .copy-btn { width: 100%; font-size: 0.82rem; padding: 0.4rem 0.7rem; }
+.script-placeholder {
+  color: #d32f2f;
+  font-weight: 700;
+}
+@media (prefers-color-scheme: dark) {
+  .script-placeholder { color: #ff6b6b; }
+}
 
 .leverage-section {
   background: var(--amber-bg);

@@ -70,6 +70,18 @@ function copyToClipboard(text, btn) {
   });
 }
 
+// Renders script text with the [bracketed placeholder] visually flagged in
+// red in the ON-PAGE PREVIEW only — this is a genuine limitation, not an
+// oversight: mailto: bodies and clipboard copies are plain text, so there's
+// no way to carry color into the actual email/message once it leaves this
+// page. The red here is purely to catch it before copying or sending.
+function highlightPlaceholder(text) {
+  const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return escaped
+    .replace(/\n/g, "<br>")
+    .replace(/(\[[^\]]*\])/g, '<span class="script-placeholder">$1</span>');
+}
+
 // Note: per-bill-card contact display (individual person cards, call/email
 // scripts on each card) was removed — all script generation now happens once,
 // at the top, via the Generate Call/Email Script toolbar, combining whichever
@@ -356,7 +368,7 @@ function combinedPersonCard(person, items, kind, leverageReasons) {
     ${primaryAction}
     ${secondaryAction}
     ${mailtoAction}
-    <p class="script-text">${script.replace(/\n/g, "<br>")}</p>
+    <p class="script-text">${highlightPlaceholder(script)}</p>
     <button type="button" class="btn secondary copy-btn">Copy this ${kind === "call" ? "call script" : "message"}</button>
   `;
   card.querySelector(".copy-btn").addEventListener("click", (e) => copyToClipboard(script, e.target));
