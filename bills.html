@@ -42,6 +42,16 @@
       </div>
       <p class="zip-note" id="zip-note">We only use this to look up your actual House rep and senators — nothing is stored or sent anywhere else. Zip codes occasionally span more than one House district; if yours does, we'll flag it so you can double-check.</p>
     </div>
+
+    <div class="script-builder">
+      <p class="section-lead">Check the bills below you want to raise, then generate one script per person to contact — combining every checked bill relevant to them, instead of repeating the process per bill.</p>
+      <div class="script-builder-actions">
+        <button class="btn" id="generate-call" type="button">Generate Call Script</button>
+        <button class="btn secondary" id="generate-email" type="button">Generate Email Script</button>
+        <span id="selected-count" class="selected-count">for 0 selected items</span>
+      </div>
+      <div id="script-output"></div>
+    </div>
   </div>
 </section>
 
@@ -53,9 +63,11 @@
       <div id="my-bills-content" class="my-bills-content">
         <div id="zip-status"></div>
         <div id="leverage-slot"></div>
+        <label class="select-all"><input type="checkbox" class="select-all-cb" data-section="my-bills"> Select all in My Bills</label>
 
         <!-- S.2403 / H.R.5169 -->
         <div class="bill-card" id="bill-hr5169" data-contact="house">
+          <label class="bill-select"><input type="checkbox" data-bill="bill-hr5169"> Include in my script</label>
           <div class="bill-head">
             <span class="bill-number">S. 2403 / H.R. 5169</span>
             <span class="bill-title">Retire Through Ownership Act</span>
@@ -87,9 +99,11 @@
           (S. 2474 and S. 2458) were already absorbed into S. 1728 mid-stream. A live version
           pulling directly from Congress.gov is planned for a future update.
         </div>
+        <label class="select-all"><input type="checkbox" class="select-all-cb" data-section="other-bills"> Select all in Other Bills</label>
 
         <!-- S.1728 -->
         <div class="bill-card" id="bill-s1728" data-contact="house">
+          <label class="bill-select"><input type="checkbox" data-bill="bill-s1728"> Include in my script</label>
           <div class="bill-head">
             <span class="bill-number">S. 1728</span>
             <span class="bill-title">Employee Ownership Representation Act</span>
@@ -111,6 +125,7 @@
 
         <!-- S.1727 / H.R.9792 -->
         <div class="bill-card" id="bill-s1727" data-contact="both">
+          <label class="bill-select"><input type="checkbox" data-bill="bill-s1727"> Include in my script</label>
           <div class="bill-head">
             <span class="bill-number">S. 1727 / H.R. 9792</span>
             <span class="bill-title">Employee Ownership Fairness Act</span>
@@ -132,6 +147,7 @@
 
         <!-- H.R.3105 / S.2461 -->
         <div class="bill-card" id="bill-hr3105" data-contact="both">
+          <label class="bill-select"><input type="checkbox" data-bill="bill-hr3105"> Include in my script</label>
           <div class="bill-head">
             <span class="bill-number">H.R. 3105 / S. 2461</span>
             <span class="bill-title">Promotion and Expansion of Private Employee Ownership Act</span>
@@ -153,6 +169,7 @@
 
         <!-- American Ownership and Resilience Act -->
         <div class="bill-card" id="bill-aora" data-contact="both">
+          <label class="bill-select"><input type="checkbox" data-bill="bill-aora"> Include in my script</label>
           <div class="bill-head">
             <span class="bill-number">H.R. 3248 / S. 1645</span>
             <span class="bill-title">American Ownership and Resilience Act</span>
@@ -174,6 +191,7 @@
 
         <!-- SHARE Plan Act -->
         <div class="bill-card" id="bill-s1101" data-contact="senate">
+          <label class="bill-select"><input type="checkbox" data-bill="bill-s1101"> Include in my script</label>
           <div class="bill-head">
             <span class="bill-number">S. 1101</span>
             <span class="bill-title">SHARE Plan Act</span>
@@ -194,6 +212,7 @@
 
         <!-- H.R.5778 -->
         <div class="bill-card" id="bill-hr5778" data-contact="house">
+          <label class="bill-select"><input type="checkbox" data-bill="bill-hr5778"> Include in my script</label>
           <div class="bill-head">
             <span class="bill-number">H.R. 5778</span>
             <span class="bill-title">Improving SBA Engagement on Employee Ownership Act</span>
@@ -215,6 +234,7 @@
 
         <!-- H.R.2993 -->
         <div class="bill-card" id="bill-hr2993" data-contact="house">
+          <label class="bill-select"><input type="checkbox" data-bill="bill-hr2993"> Include in my script</label>
           <div class="bill-head">
             <span class="bill-number">H.R. 2993</span>
             <span class="bill-title">ESOP Funding for SBA Position Act</span>
