@@ -132,9 +132,36 @@ function populateGenericSlots(state) {
   });
 }
 
-// "Extra Leverage" box at the top of My Bills — only rendered when at least
-// one of the visitor's actual reps/senators holds a leadership role or
-// committee seat that specifically matters for one of our bills.
+// Canonical "Other Bills" order — used to restore cards to their default
+// home (and correct order) before reapplying leverage-based moves for a new
+// zip search, so nothing gets stuck in My Bills from a previous lookup.
+const OTHER_BILLS_ORDER = ["bill-s1728", "bill-s1727", "bill-hr3105", "bill-aora", "bill-s1101", "bill-hr5778", "bill-hr2993"];
+
+function updateCountBadges() {
+  const myCount = document.querySelectorAll("#my-bills-content .bill-card").length;
+  const otherCount = document.querySelectorAll("#other-bills .all-bills-content .bill-card").length;
+  document.getElementById("my-bills-count").textContent = `(${myCount})`;
+  document.getElementById("other-bills-count").textContent = `(${otherCount})`;
+}
+
+// Move every non-HR5169 card back to Other Bills, in its normal order, and
+// clear leverage highlighting — run at the start of every zip search so a
+// previous search's moves don't linger when this one finds something different.
+function resetBillPlacement() {
+  const otherContainer = document.querySelector("#other-bills .all-bills-content");
+  OTHER_BILLS_ORDER.forEach((id) => {
+    const card = document.getElementById(id);
+    if (card) otherContainer.appendChild(card);
+  });
+  document.querySelectorAll(".bill-card.has-leverage").forEach((el) => el.classList.remove("has-leverage"));
+  updateCountBadges();
+}
+
+// "Extra Leverage" box at the top of My Bills, AND physically moves any bill
+// where a real match was found into My Bills (bordered in orange) — only
+// rendered/moved when at least one of the visitor's actual reps/senators
+// holds a leadership role or committee seat that specifically matters for
+// one of our bills.
 function renderLeverageSlot(allReps) {
   const slot = document.getElementById("leverage-slot");
   const hits = [];
@@ -156,10 +183,23 @@ function renderLeverageSlot(allReps) {
   slot.innerHTML = `
     <div class="leverage-section">
       <h3>&#9733; Extra Leverage</h3>
-      <p>One or more of your representatives sit on a committee or hold a leadership role that gives them outsized influence on a specific bill — worth mentioning explicitly when you contact them.</p>
+      <p>One or more of your representatives sit on a committee or hold a leadership role that gives them outsized influence on a specific bill — those bills have been moved into My Bills and bordered in orange below.</p>
       <ul>${items}</ul>
     </div>
   `;
+
+  // Move each matched bill into My Bills, in canonical order, bordered.
+  const myBillsContainer = document.getElementById("my-bills-content");
+  const matchedIds = [...new Set(hits.map((h) => h.billId))]
+    .sort((a, b) => OTHER_BILLS_ORDER.indexOf(a) - OTHER_BILLS_ORDER.indexOf(b));
+  matchedIds.forEach((id) => {
+    const card = document.getElementById(id);
+    if (card) {
+      myBillsContainer.appendChild(card);
+      card.classList.add("has-leverage");
+    }
+  });
+  updateCountBadges();
 }
 
 async function fetchLiveReps(zip5) {
@@ -174,6 +214,7 @@ async function fetchLiveReps(zip5) {
 async function renderMyBills(zip5) {
   const statusEl = document.getElementById("zip-status");
   statusEl.innerHTML = `<p class="my-bills-state">Looking up ${zip5}&hellip;</p>`;
+  resetBillPlacement(); // undo any moves from a previous search before this one runs
 
   try {
     const data = await fetchLiveReps(zip5);
