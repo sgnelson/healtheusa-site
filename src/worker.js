@@ -2,6 +2,10 @@
 // 5 Calls API token never reaches the browser. The token is read from
 // env.FIVECALLS_TOKEN, which must be set as a Cloudflare secret — never
 // committed to the repo, never present in any file the browser can fetch.
+//
+// Note: dashboard-set secrets don't always apply to an already-running preview
+// deployment for Git-connected Workers Builds projects — this comment exists
+// to force a fresh build/deploy so a newly-added secret actually gets picked up.
 
 const FIVECALLS_BASE = "https://api.5calls.org/v1/representatives";
 
