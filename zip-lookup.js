@@ -319,14 +319,43 @@ function combinedPersonCard(person, items, kind, leverageReasons) {
   const hasLeverage = leverageReasons && leverageReasons.size > 0;
   card.className = "person-card" + (hasLeverage ? " has-leverage" : "");
   const script = kind === "call" ? buildCombinedCallScript(person, items) : buildCombinedEmailScript(person, items);
+  const telHref = `tel:${(person.phone || "").replace(/[^\d+]/g, "")}`;
+
+  // Primary action matches which script was generated — a call script should
+  // lead with Call, an email/message script should lead with their contact
+  // form (5 Calls doesn't give us a direct email address, so the contact
+  // form is the actual "send this" destination) — with the other option
+  // still available underneath, just demoted rather than hidden.
+  const primaryAction = kind === "call" || !person.url
+    ? `<a class="btn call-btn" href="${telHref}">Call ${person.phone || ""}</a>`
+    : `<a class="btn call-btn" href="${person.url}" target="_blank" rel="noopener">Open their contact form</a>`;
+  const secondaryAction = kind === "call" || !person.url
+    ? (person.url ? `<a class="contact-page-link" href="${person.url}" target="_blank" rel="noopener">Or use their official contact form &rarr;</a>` : "")
+    : `<a class="contact-page-link" href="${telHref}">Or call ${person.phone || ""} &rarr;</a>`;
+
+  // Mail-app option for the email script only. We don't have a verified
+  // email address for this office (5 Calls doesn't provide one, and most
+  // congressional offices route through their web form specifically rather
+  // than publishing a direct address) — so this deliberately leaves "To"
+  // blank rather than guess one, and just pre-fills subject + body.
+  let mailtoAction = "";
+  if (kind === "email") {
+    const subject = encodeURIComponent(
+      items.length > 1 ? "Constituent message — multiple ESOP bills" : `Constituent message — ${items[0].title}`
+    );
+    const body = encodeURIComponent(script);
+    mailtoAction = `<a class="contact-page-link" href="mailto:?subject=${subject}&body=${body}">Or open in your mail app (add their address yourself — we don't have a verified one) &rarr;</a>`;
+  }
+
   card.innerHTML = `
     <div class="person-head">
       <span class="person-name">${person.name}</span>
       <span class="person-role">${person.area}${person.party ? " · " + person.party : ""}</span>
       ${hasLeverage ? `<span class="person-leverage">&#9733; ${[...leverageReasons].join("; ")}</span>` : ""}
     </div>
-    <a class="btn call-btn" href="tel:${(person.phone || "").replace(/[^\d+]/g, "")}">Call ${person.phone || ""}</a>
-    ${person.url ? `<a class="contact-page-link" href="${person.url}" target="_blank" rel="noopener">Or use their official contact form &rarr;</a>` : ""}
+    ${primaryAction}
+    ${secondaryAction}
+    ${mailtoAction}
     <p class="script-text">${script.replace(/\n/g, "<br>")}</p>
     <button type="button" class="btn secondary copy-btn">Copy this ${kind === "call" ? "call script" : "message"}</button>
   `;
