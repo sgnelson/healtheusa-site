@@ -1,41 +1,46 @@
-// Bill metadata for the "My Bills" personalized summary.
-// contact: "house" | "senate" | "both" — matches data-contact on the full card in #all-bills.
+// Bill metadata for "My Bills" and the personalized message generator.
+// contact: "house" | "senate" | "both" — who to reach for this bill.
+// messageAsk: second-person imperative, written to drop directly into a message body.
 // leverage: set only when a SPECIFIC committee or leadership role has outsized power over
-// this bill's next step — contacting a rep/senator who actually holds that role matters far
-// more than a generic cosponsorship ask. We can't yet tell whether a given visitor's own
-// rep/senator holds it (that needs the real district-level lookup in a future update) — this
-// just flags that the distinction exists and is worth checking.
+// this bill's next step. We can't automatically verify whether a given rep/senator holds
+// that role (5 Calls doesn't return committee assignments, and hand-maintaining a full
+// committee roster risks going stale/wrong) — this flags that it's worth checking yourself.
 const BILLS = [
-  { id: "bill-hr5169", number: "S. 2403 / H.R. 5169", contact: "house",
+  { id: "bill-hr5169", title: "H.R. 5169, the Retire Through Ownership Act", number: "S. 2403 / H.R. 5169", contact: "house",
     ask: "Ask your House rep to press leadership for a floor vote.",
+    messageAsk: "please press House leadership to schedule a floor vote on H.R. 5169, the Retire Through Ownership Act. It already passed the Senate unanimously and cleared the House Education & Workforce Committee unanimously — it just needs to be scheduled.",
     leverage: "Already cleared committee. The people who actually control what happens next are House leadership (Speaker's office, Majority Leader, Rules Committee chair) — if your rep holds one of those roles, their voice counts far more than an average member's." },
-  { id: "bill-s1728", number: "S. 1728", contact: "house",
+  { id: "bill-s1728", title: "S. 1728, the Employee Ownership Representation Act", number: "S. 1728", contact: "house",
     ask: "Ask your House rep to introduce a companion bill — none exists yet.",
+    messageAsk: "please introduce a House companion bill to S. 1728, the Employee Ownership Representation Act, which already passed the Senate unanimously but has no House counterpart yet.",
     leverage: "A member of the House Education & Workforce Committee is the natural person to introduce this — if that's your rep, say so explicitly." },
-  { id: "bill-s1727", number: "S. 1727 / H.R. 9792", contact: "both",
-    ask: "Ask your senator to push it out of committee; ask your House rep to cosponsor H.R. 9792." },
-  { id: "bill-hr3105", number: "H.R. 3105 / S. 2461", contact: "both",
+  { id: "bill-s1727", title: "H.R. 9792 / S. 1727, the Employee Ownership Fairness Act", number: "S. 1727 / H.R. 9792", contact: "both",
+    ask: "Ask your senator to push it out of committee; ask your House rep to cosponsor H.R. 9792.",
+    messageAskSenate: "please push S. 1727, the Employee Ownership Fairness Act, out of the Senate HELP Committee for a floor vote — it's been stalled there without a vote.",
+    messageAskHouse: "please cosponsor H.R. 9792, the House companion to the Employee Ownership Fairness Act." },
+  { id: "bill-hr3105", title: "H.R. 3105 / S. 2461, the Promotion and Expansion of Private Employee Ownership Act", number: "H.R. 3105 / S. 2461", contact: "both",
     ask: "Ask your senator and House rep to cosponsor and push for committee movement.",
+    messageAsk: "please cosponsor H.R. 3105 / S. 2461, the Promotion and Expansion of Private Employee Ownership Act, and push for committee movement.",
     leverage: "This is a tax bill sitting in House Ways & Means and Senate Finance. Members of those two committees control whether it even gets a markup — that's far more leverage than a cosponsorship from outside them." },
-  { id: "bill-aora", number: "H.R. 3248 / S. 1645", contact: "both",
-    ask: "Ask your senator and House rep to cosponsor." },
-  { id: "bill-s1101", number: "S. 1101", contact: "senate",
-    ask: "Ask your senator to cosponsor." },
-  { id: "bill-hr5778", number: "H.R. 5778", contact: "house",
+  { id: "bill-aora", title: "H.R. 3248 / S. 1645, the American Ownership and Resilience Act", number: "H.R. 3248 / S. 1645", contact: "both",
+    ask: "Ask your senator and House rep to cosponsor.",
+    messageAsk: "please cosponsor H.R. 3248 / S. 1645, the American Ownership and Resilience Act." },
+  { id: "bill-s1101", title: "S. 1101, the SHARE Plan Act", number: "S. 1101", contact: "senate",
+    ask: "Ask your senator to cosponsor.",
+    messageAsk: "please cosponsor S. 1101, the SHARE Plan Act." },
+  { id: "bill-hr5778", title: "H.R. 5778, the Improving SBA Engagement on Employee Ownership Act", number: "H.R. 5778", contact: "house",
     ask: "Ask your House rep to press for a floor vote.",
+    messageAsk: "please press House leadership for a floor vote on H.R. 5778, which already passed the House Small Business Committee unanimously.",
     leverage: "Already cleared the House Small Business Committee — like H.R. 5169, this now needs House leadership specifically, not another committee member." },
-  { id: "bill-hr2993", number: "H.R. 2993", contact: "house",
-    ask: "Ask your House rep to cosponsor." },
+  { id: "bill-hr2993", title: "H.R. 2993, the ESOP Funding for SBA Position Act", number: "H.R. 2993", contact: "house",
+    ask: "Ask your House rep to cosponsor.",
+    messageAsk: "please cosponsor H.R. 2993, the ESOP Funding for SBA Position Act." },
 ];
 
-// Approximate 3-digit ZIP prefix -> state mapping (standard USPS regional blocks).
-// State-level only — this is NOT precise enough for exact congressional district
-// lookup (that needs real geocoding, planned as part of a future update). Boundary
-// zips near state lines can occasionally fall on the wrong side; treat as "very
-// likely your state," not a guarantee.
+// --- Fallback: approximate 3-digit ZIP prefix -> state, used only if the live
+// lookup (below) fails or hasn't been configured with an API token yet. ---
 const ZIP3_RANGES = [
-  [0, 5, null],        // unassigned / special
-  [6, 9, "Puerto Rico"],
+  [0, 5, null], [6, 9, "Puerto Rico"],
   [10, 27, "Massachusetts"], [28, 29, "Rhode Island"], [30, 38, "New Hampshire"],
   [39, 49, "Maine"], [50, 59, "Vermont"], [60, 69, "Connecticut"],
   [70, 89, "New Jersey"], [100, 149, "New York"], [150, 196, "Pennsylvania"],
@@ -55,19 +60,54 @@ const ZIP3_RANGES = [
   [900, 961, "California"], [967, 968, "Hawaii"], [969, 969, "Guam / Northern Mariana Islands / American Samoa"],
   [970, 979, "Oregon"], [980, 994, "Washington"], [995, 999, "Alaska"],
 ];
+const NO_VOTING_MEMBER = new Set(["District of Columbia", "Puerto Rico", "Guam / Northern Mariana Islands / American Samoa"]);
 
-const NO_VOTING_MEMBER = new Set([
-  "District of Columbia",
-  "Puerto Rico",
-  "Guam / Northern Mariana Islands / American Samoa",
-]);
-
-function lookupState(zip5) {
+function lookupStateFallback(zip5) {
   const prefix = parseInt(zip5.slice(0, 3), 10);
   for (const [lo, hi, state] of ZIP3_RANGES) {
     if (prefix >= lo && prefix <= hi) return state;
   }
   return null;
+}
+
+// --- Draft message generation ---
+
+function buildMessage(bill, person, toSenate) {
+  const ask = toSenate ? (bill.messageAskSenate || bill.messageAsk) : (bill.messageAskHouse || bill.messageAsk);
+  return `Dear ${person.name},
+
+I'm a constituent writing about ${bill.title}. As my representative, ${ask}
+
+[Add a sentence here about why this matters to you personally — a specific, personalized message is far more likely to be read than a form letter.]
+
+Thank you for your time and consideration.`;
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const original = btn.textContent;
+    btn.textContent = "Copied!";
+    setTimeout(() => { btn.textContent = original; }, 1800);
+  }).catch(() => {
+    btn.textContent = "Couldn't copy — select the text manually";
+  });
+}
+
+function personCard(person, bill, toSenate) {
+  const card = document.createElement("div");
+  card.className = "person-card";
+  const message = buildMessage(bill, person, toSenate);
+  card.innerHTML = `
+    <div class="person-head">
+      <span class="person-name">${person.name}</span>
+      <span class="person-role">${person.area}${person.party ? " · " + person.party : ""}</span>
+    </div>
+    <a class="btn call-btn" href="tel:${(person.phone || "").replace(/[^\d+]/g, "")}">Call ${person.phone || ""}</a>
+    <button type="button" class="btn secondary copy-btn">Copy a message to personalize</button>
+    ${person.url ? `<a class="contact-page-link" href="${person.url}" target="_blank" rel="noopener">Or use their official contact form &rarr;</a>` : ""}
+  `;
+  card.querySelector(".copy-btn").addEventListener("click", (e) => copyToClipboard(message, e.target));
+  return card;
 }
 
 function contactLabel(contact, state) {
@@ -77,7 +117,8 @@ function contactLabel(contact, state) {
   return `Your House rep &amp; senators${suffix}`;
 }
 
-function appendBillsList(container, state) {
+// Generic (no live rep data) summary — used for the fallback path.
+function appendGenericBillsList(container, state) {
   const list = document.createElement("div");
   BILLS.forEach((bill) => {
     const a = document.createElement("a");
@@ -91,50 +132,94 @@ function appendBillsList(container, state) {
       <div class="mb-ask">${bill.ask}</div>
       ${bill.leverage ? `<div class="mb-leverage"><strong>Extra leverage:</strong> ${bill.leverage}</div>` : ""}
     `;
-    a.addEventListener("click", () => {
-      document.getElementById("all-bills").open = true;
-    });
+    a.addEventListener("click", () => { document.getElementById("all-bills").open = true; });
     list.appendChild(a);
   });
   container.appendChild(list);
 }
 
-function renderMyBills(zip5) {
+// Full personalized version — used when the live lookup succeeds.
+function appendPersonalizedBillsList(container, houseRep, senators) {
+  BILLS.forEach((bill) => {
+    const block = document.createElement("div");
+    block.className = "my-bills-summary personalized";
+    block.innerHTML = `
+      <div class="mb-top">
+        <a href="#${bill.id}" class="mb-number">${bill.number}</a>
+        <span class="contact-tag ${bill.contact === "both" ? "senate" : bill.contact}">${contactLabel(bill.contact, null)}</span>
+      </div>
+      <div class="mb-ask">${bill.ask}</div>
+      ${bill.leverage ? `<div class="mb-leverage"><strong>Extra leverage:</strong> ${bill.leverage}</div>` : ""}
+    `;
+    const people = document.createElement("div");
+    people.className = "person-cards";
+    if ((bill.contact === "house" || bill.contact === "both") && houseRep) {
+      people.appendChild(personCard(houseRep, bill, false));
+    }
+    if ((bill.contact === "senate" || bill.contact === "both")) {
+      senators.forEach((s) => people.appendChild(personCard(s, bill, true)));
+    }
+    if (!people.children.length) {
+      people.innerHTML = `<p class="zip-error">Couldn't find a matching representative for this bill from the lookup — try the "All Bills" section below for the generic contact info.</p>`;
+    }
+    block.appendChild(people);
+    container.querySelector(".mb-list").appendChild(block);
+  });
+}
+
+async function fetchLiveReps(zip5) {
+  const res = await fetch(`/api/reps?zip=${zip5}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Lookup failed (${res.status})`);
+  }
+  return res.json();
+}
+
+async function renderMyBills(zip5) {
   const container = document.getElementById("my-bills-content");
-  const state = lookupState(zip5);
+  container.innerHTML = `<p class="my-bills-state">Looking up ${zip5}&hellip;</p>`;
 
-  if (!state) {
-    // The zip is validly formatted (already checked before this is called) but our
-    // approximate table doesn't cover this 3-digit prefix — could be a genuinely
-    // unused block, or a gap in this table. Don't claim the zip itself is invalid;
-    // just say we can't confirm the state, and show all 8 bills anyway since they're
-    // federal and apply regardless of state.
+  try {
+    const data = await fetchLiveReps(zip5);
+    const houseRep = data.representatives.find((r) => r.area === "US House") || null;
+    const senators = data.representatives.filter((r) => r.area === "US Senate");
+
+    if (!houseRep && senators.length === 0) {
+      throw new Error("No federal representatives returned for this zip.");
+    }
+
     container.innerHTML = `
-      <p class="my-bills-state">Zip ${zip5}</p>
-      <div class="note-box">
-        <strong>Couldn't confirm your state</strong> from this zip with our simple
-        lookup table — that's a limitation on our end, not necessarily a problem with
-        your zip code. These bills are federal, so they're actionable for you either way.
-      </div>
+      <p class="my-bills-state">Zip ${zip5}${data.state ? " — " + data.state : ""}</p>
+      ${data.lowAccuracy ? `<div class="note-box"><strong>Heads up:</strong> this zip code may span more than one congressional district — we've matched you to the closest one, but double-check your House rep if you're near a district border.</div>` : ""}
+      <div class="mb-list"></div>
     `;
-    appendBillsList(container, "both-generic");
-    return;
+    appendPersonalizedBillsList(container, houseRep, senators);
+  } catch (err) {
+    // Live lookup unavailable (no token configured yet, rate-limited, network error, etc).
+    // Fall back to the approximate state-level table rather than showing nothing.
+    const state = lookupStateFallback(zip5);
+    if (!state) {
+      container.innerHTML = `
+        <p class="my-bills-state">Zip ${zip5}</p>
+        <div class="note-box"><strong>Couldn't look this up right now</strong> (${err.message}), and our backup table doesn't cover this zip either. These bills are federal and apply to you regardless — see "All Bills" below.</div>
+      `;
+      appendGenericBillsList(container, "both-generic");
+      return;
+    }
+    if (NO_VOTING_MEMBER.has(state)) {
+      container.innerHTML = `
+        <p class="my-bills-state">Zip ${zip5} — ${state}</p>
+        <div class="note-box"><strong>Worth knowing:</strong> ${state} does not have voting representation in Congress the way states do — your delegate can still advocate on these bills, but doesn't cast a floor vote.</div>
+      `;
+    } else {
+      container.innerHTML = `
+        <p class="my-bills-state">Zip ${zip5} — likely ${state}.</p>
+        <div class="note-box">Live representative lookup isn't available right now (${err.message}), so here's the general version — contact your House rep and senators from ${state}.</div>
+      `;
+    }
+    appendGenericBillsList(container, state);
   }
-
-  if (NO_VOTING_MEMBER.has(state)) {
-    container.innerHTML = `
-      <p class="my-bills-state">Zip ${zip5} — ${state}</p>
-      <div class="note-box">
-        <strong>Worth knowing:</strong> ${state} does not have voting representation in
-        Congress the way states do — your delegate can still advocate on these bills, but
-        doesn't cast a floor vote. Every bill below is still worth contacting them about.
-      </div>
-    `;
-  } else {
-    container.innerHTML = `<p class="my-bills-state">Zip ${zip5} — likely ${state}. Here's what's actionable for you:</p>`;
-  }
-
-  appendBillsList(container, state);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -332,6 +332,28 @@ details.collapsible .bill-card:last-child { margin-bottom: 0; }
 .my-bills-summary .mb-leverage strong { color: var(--amber); }
 .my-bills-state { font-weight: 700; margin-bottom: 1rem; }
 
+.my-bills-summary.personalized { cursor: default; }
+.my-bills-summary.personalized:hover { border-color: var(--border); }
+.my-bills-summary .mb-number { text-decoration: none; }
+.my-bills-summary a.mb-number:hover { text-decoration: underline; }
+
+.person-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.75rem; margin-top: 0.85rem; }
+.person-card {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.person-head { display: flex; flex-direction: column; }
+.person-name { font-weight: 700; }
+.person-role { font-size: 0.78rem; color: var(--text-dim); }
+.person-card .btn { text-align: center; font-size: 0.88rem; padding: 0.55rem 0.9rem; }
+.person-card .call-btn { background: var(--navy); }
+.contact-page-link { font-size: 0.8rem; text-align: center; margin-top: 0.1rem; }
+
 footer.site {
   border-top: 1px solid var(--border);
   padding: 2.5rem 0;

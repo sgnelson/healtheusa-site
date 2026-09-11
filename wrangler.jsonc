@@ -1,7 +1,9 @@
 {
   "name": "healtheusa-site",
   "compatibility_date": "2026-09-11",
+  "main": "src/worker.js",
   "assets": {
-    "directory": "./"
+    "directory": "./",
+    "binding": "ASSETS"
   }
 }
