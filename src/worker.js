@@ -7,11 +7,13 @@
 // deployment for Git-connected Workers Builds projects — this comment exists
 // to force a fresh build/deploy so a newly-added secret actually gets picked up.
 
+import { findLeverage } from "./committee-data.js";
+
 const FIVECALLS_BASE = "https://api.5calls.org/v1/representatives";
 
 // 5 Calls covers federal AND state officials; we only want the two federal
-// chambers for this site. Filtering on `area` — verify against a real
-// response once a token is live, since this project hasn't seen live data yet.
+// chambers for this site. Confirmed against a real response (2026-09-11):
+// area is exactly "US House" or "US Senate" for federal officials.
 const FEDERAL_AREAS = new Set(["US House", "US Senate"]);
 
 async function handleRepsLookup(request, env) {
@@ -61,6 +63,7 @@ async function handleRepsLookup(request, env) {
       party: r.party || null,
       area: r.area, // "US House" or "US Senate"
       district: r.district || null,
+      leverage: findLeverage(r.name, r.area), // [{billId, reason}], [] if none
     })),
   });
 }

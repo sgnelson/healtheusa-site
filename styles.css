@@ -354,6 +354,25 @@ details.collapsible .bill-card:last-child { margin-bottom: 0; }
 .person-card .call-btn { background: var(--navy); }
 .contact-page-link { font-size: 0.8rem; text-align: center; margin-top: 0.1rem; }
 
+.leverage-section {
+  background: var(--amber-bg);
+  border: 2px solid var(--amber);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1.5rem;
+}
+.leverage-section h3 { margin: 0 0 0.5rem; color: var(--amber); }
+.leverage-section p { margin: 0 0 0.75rem; font-size: 0.9rem; color: var(--text-dim); }
+.leverage-section ul { margin: 0; padding-left: 1.2rem; }
+.leverage-section li { margin-bottom: 0.5rem; font-size: 0.92rem; }
+.leverage-section a { color: var(--navy); font-weight: 700; }
+
+.my-bills-summary .mb-leverage.matched {
+  color: var(--amber);
+  font-weight: 700;
+  border-top: 1px dashed var(--amber);
+}
+
 footer.site {
   border-top: 1px solid var(--border);
   padding: 2.5rem 0;

@@ -138,18 +138,63 @@ function appendGenericBillsList(container, state) {
   container.appendChild(list);
 }
 
+// Builds the "Extra Leverage" callout that sits above the bill list — only
+// rendered when at least one of the visitor's actual reps/senators holds a
+// leadership role or committee seat that specifically matters for one of our
+// bills. Real, matched leverage, not the generic "if your rep happens to be
+// on this committee" hint the fallback path uses.
+function buildLeverageSection(allReps) {
+  const hits = [];
+  allReps.forEach((person) => {
+    (person.leverage || []).forEach((lev) => {
+      const bill = BILLS.find((b) => b.id === lev.billId);
+      if (bill) hits.push({ person, bill, reason: lev.reason });
+    });
+  });
+  if (!hits.length) return "";
+
+  const items = hits.map((h) => `
+    <li>
+      <strong>${h.person.name}</strong> (your ${h.person.area === "US Senate" ? "senator" : "House rep"}) is <strong>${h.reason}</strong> —
+      that's direct influence over <a href="#${h.bill.id}">${h.bill.number}</a>.
+    </li>
+  `).join("");
+
+  return `
+    <div class="leverage-section">
+      <h3>⭐ Extra Leverage</h3>
+      <p>One or more of your representatives sit on a committee or hold a leadership role that gives them outsized influence on specific bills below — worth mentioning explicitly when you contact them.</p>
+      <ul>${items}</ul>
+    </div>
+  `;
+}
+
 // Full personalized version — used when the live lookup succeeds.
 function appendPersonalizedBillsList(container, houseRep, senators) {
+  const allReps = [houseRep, ...senators].filter(Boolean);
+  // Insert before .mb-list specifically, not at the end of the container —
+  // this needs to appear at the TOP of My Bills, above the per-bill list.
+  container.querySelector(".mb-list").insertAdjacentHTML("beforebegin", buildLeverageSection(allReps));
+
   BILLS.forEach((bill) => {
     const block = document.createElement("div");
     block.className = "my-bills-summary personalized";
+
+    // Prefer a real, matched leverage reason over the generic static hint.
+    const realLeverage = allReps
+      .map((p) => (p.leverage || []).find((l) => l.billId === bill.id))
+      .find(Boolean);
+    const leverageHtml = realLeverage
+      ? `<div class="mb-leverage matched"><strong>&#9733; Confirmed leverage:</strong> see above — one of your reps holds real influence here.</div>`
+      : (bill.leverage ? `<div class="mb-leverage"><strong>Extra leverage:</strong> ${bill.leverage}</div>` : "");
+
     block.innerHTML = `
       <div class="mb-top">
         <a href="#${bill.id}" class="mb-number">${bill.number}</a>
         <span class="contact-tag ${bill.contact === "both" ? "senate" : bill.contact}">${contactLabel(bill.contact, null)}</span>
       </div>
       <div class="mb-ask">${bill.ask}</div>
-      ${bill.leverage ? `<div class="mb-leverage"><strong>Extra leverage:</strong> ${bill.leverage}</div>` : ""}
+      ${leverageHtml}
     `;
     const people = document.createElement("div");
     people.className = "person-cards";
