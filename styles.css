@@ -51,7 +51,8 @@ header.site {
   padding: 1.1rem 0;
 }
 header.site .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.brand { font-weight: 700; font-size: 1.15rem; text-decoration: none; color: var(--text); letter-spacing: -0.01em; }
+.brand { font-weight: 700; font-size: 1.15rem; text-decoration: none; color: var(--text); letter-spacing: -0.01em; transition: opacity 0.15s ease; }
+.brand:hover { opacity: 0.65; }
 .brand span { color: var(--amber); }
 nav.site a {
   margin-left: 1.5rem;
