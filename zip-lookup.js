@@ -79,7 +79,7 @@ function copyToClipboard(text, btn) {
   });
 }
 
-function personCard(person, billId, toSenate) {
+function personCard(person, billId, toSenate, leverageReason) {
   const card = document.createElement("div");
   card.className = "person-card";
   const message = buildMessage(billId, person, toSenate);
@@ -87,6 +87,7 @@ function personCard(person, billId, toSenate) {
     <div class="person-head">
       <span class="person-name">${person.name}</span>
       <span class="person-role">${person.area}${person.party ? " · " + person.party : ""}</span>
+      ${leverageReason ? `<span class="person-leverage">&#9733; ${leverageReason}</span>` : ""}
     </div>
     <a class="btn call-btn" href="tel:${(person.phone || "").replace(/[^\d+]/g, "")}">Call ${person.phone || ""}</a>
     <button type="button" class="btn secondary copy-btn">Copy a message to personalize</button>
@@ -103,18 +104,31 @@ function contactVerb(contact) {
 }
 
 // Populate every .person-cards-slot on the page with real, named contacts.
-function populatePersonCards(houseRep, senators) {
+// leverageByBill (optional): { billId: [{person, reason}, ...] } — for a bill
+// with a confirmed leverage match, show ONLY the specific person(s) who hold
+// that leverage (e.g. just the senator who's actually on the relevant
+// committee, not both senators) and state their role explicitly on the card,
+// rather than the generic "everyone this contact-type would normally include."
+function populatePersonCards(houseRep, senators, leverageByBill) {
   document.querySelectorAll(".person-cards-slot").forEach((slot) => {
     const billId = slot.dataset.bill;
     const contact = slot.dataset.contact;
     slot.innerHTML = "";
     const wrap = document.createElement("div");
     wrap.className = "person-cards";
-    if ((contact === "house" || contact === "both") && houseRep) {
-      wrap.appendChild(personCard(houseRep, billId, false));
-    }
-    if ((contact === "senate" || contact === "both")) {
-      senators.forEach((s) => wrap.appendChild(personCard(s, billId, true)));
+
+    const leveraged = (leverageByBill && leverageByBill[billId]) || null;
+    if (leveraged && leveraged.length) {
+      leveraged.forEach(({ person, reason }) => {
+        wrap.appendChild(personCard(person, billId, person.area === "US Senate", reason));
+      });
+    } else {
+      if ((contact === "house" || contact === "both") && houseRep) {
+        wrap.appendChild(personCard(houseRep, billId, false));
+      }
+      if ((contact === "senate" || contact === "both")) {
+        senators.forEach((s) => wrap.appendChild(personCard(s, billId, true)));
+      }
     }
     if (!wrap.children.length) {
       wrap.innerHTML = `<p class="zip-error">Couldn't find a matching representative for this bill from the lookup.</p>`;
@@ -171,7 +185,7 @@ function renderLeverageSlot(allReps) {
       if (bill) hits.push({ person, billId: lev.billId, title: bill.title, reason: lev.reason });
     });
   });
-  if (!hits.length) { slot.innerHTML = ""; return; }
+  if (!hits.length) { slot.innerHTML = ""; return {}; }
 
   const items = hits.map((h) => `
     <li>
@@ -200,6 +214,16 @@ function renderLeverageSlot(allReps) {
     }
   });
   updateCountBadges();
+
+  // Build { billId: [{person, reason}] } so populatePersonCards can show only
+  // the specific leveraged person(s) on a matched bill's card, not the full
+  // generic contact-type list (e.g. just Kaine, not Kaine + Warner, if only
+  // Kaine actually sits on the committee that bill needs).
+  const leverageByBill = {};
+  hits.forEach((h) => {
+    (leverageByBill[h.billId] ||= []).push({ person: h.person, reason: h.reason });
+  });
+  return leverageByBill;
 }
 
 async function fetchLiveReps(zip5) {
@@ -229,8 +253,8 @@ async function renderMyBills(zip5) {
       <p class="my-bills-state">Zip ${zip5}${data.state ? " — " + data.state : ""}</p>
       ${data.lowAccuracy ? `<div class="note-box"><strong>Heads up:</strong> this zip code may span more than one congressional district — we've matched you to the closest one, but double-check your House rep if you're near a district border.</div>` : ""}
     `;
-    renderLeverageSlot([houseRep, ...senators].filter(Boolean));
-    populatePersonCards(houseRep, senators);
+    const leverageByBill = renderLeverageSlot([houseRep, ...senators].filter(Boolean));
+    populatePersonCards(houseRep, senators, leverageByBill);
   } catch (err) {
     const state = lookupStateFallback(zip5);
     if (!state) {

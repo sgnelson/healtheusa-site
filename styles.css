@@ -336,6 +336,7 @@ details.collapsible .bill-card:last-child { margin-bottom: 0; }
 .person-head { display: flex; flex-direction: column; }
 .person-name { font-weight: 700; }
 .person-role { font-size: 0.78rem; color: var(--text-dim); }
+.person-leverage { font-size: 0.8rem; font-weight: 700; color: var(--amber); }
 .person-card .btn { text-align: center; font-size: 0.88rem; padding: 0.55rem 0.9rem; }
 .person-card .call-btn { background: var(--navy); }
 .contact-page-link { font-size: 0.8rem; text-align: center; margin-top: 0.1rem; }
