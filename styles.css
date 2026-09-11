@@ -260,6 +260,70 @@ section p.section-lead {
 
 .bill-meta { font-size: 0.82rem; color: var(--text-dim); margin-top: 0.6rem; }
 
+/* Zip lookup */
+.zip-block { max-width: 32rem; }
+.zip-block label { display: block; font-weight: 700; margin-bottom: 0.6rem; }
+.zip-row { display: flex; gap: 0.6rem; }
+.zip-row input {
+  flex: 1;
+  font-size: 1rem;
+  padding: 0.65rem 0.9rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+}
+.zip-row input:focus { outline: 2px solid var(--navy); outline-offset: 1px; }
+.zip-row .btn { padding: 0.65rem 1.4rem; white-space: nowrap; }
+.zip-note { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.6rem; }
+.zip-error { color: #b3261e; font-weight: 600; }
+
+/* Collapsible sections */
+details.collapsible {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+  background: var(--card);
+}
+details.collapsible summary {
+  cursor: pointer;
+  padding: 1.1rem 1.5rem;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+details.collapsible summary::-webkit-details-marker { display: none; }
+details.collapsible summary h2 { margin: 0; font-size: 1.3rem; }
+details.collapsible summary::after {
+  content: "+";
+  font-size: 1.4rem;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+details.collapsible[open] summary::after { content: "\2212"; }
+details.collapsible > div { padding: 0 1.5rem 1.5rem; }
+details.collapsible .note-box,
+details.collapsible .bill-card { margin: 0 0 1.25rem; }
+details.collapsible .bill-card:last-child { margin-bottom: 0; }
+
+.my-bills-summary {
+  display: block;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 0.75rem;
+  text-decoration: none;
+  color: var(--text);
+}
+.my-bills-summary:hover { border-color: var(--navy); }
+.my-bills-summary .mb-top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
+.my-bills-summary .mb-number { font-weight: 800; color: var(--navy); }
+.my-bills-summary .mb-ask { font-size: 0.9rem; color: var(--text-dim); margin-top: 0.3rem; }
+.my-bills-state { font-weight: 700; margin-bottom: 1rem; }
+
 footer.site {
   border-top: 1px solid var(--border);
   padding: 2.5rem 0;
