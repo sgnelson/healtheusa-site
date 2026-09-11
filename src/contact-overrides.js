@@ -4,20 +4,23 @@
 //
 // Built 2026-09-11 by scripts/find_contact_forms.py against all 539 current
 // members from the unitedstates/congress-legislators dataset: scrapes each
-// office's own homepage nav for contact/email-form links, scores them by
-// keyword, adds the dataset's own `contact_form` field (when present) as one
-// more candidate rather than an automatic override, and verifies the
-// best-scoring candidate returns 200 before accepting it. That last part
-// matters: the dataset field is frequently just the generic contact hub, not
-// the actual form (e.g. Kaine's dataset value was /contact; the real form,
-// already linked from Kaine's own homepage nav, is /contact/share-your-opinion).
+// office's own homepage nav (both href AND visible link text — a plain href
+// keyword match isn't enough, see the Kaine/Pallone notes in that script) for
+// contact/email-form links, scores them, adds the dataset's own `contact_form`
+// field (when present) as one more candidate rather than an automatic
+// override, and verifies the best-scoring candidate returns 200.
 //
-// 442/539 resolved this way with a real, verified link. The rest fall
+// TODO: no mechanism yet to detect when a member's site changes (redesign,
+// new office after an election) and re-verify — this is a one-time scrape,
+// re-run by hand. See ROADMAP.md Phase 5 notes for options.
+//
+// 452/539 resolved this way with a real, verified link. The rest fall
 // back to a guessed `${url}/contact` below — works most of the time, but isn't
 // guaranteed to be the exact form. Most of the unresolved ones are blocked from
 // automated fetching by the shared house.gov/senate.gov WAF (not broken sites) —
 // see scripts/contact-forms-needed.tsv for the full list.
 export const CONTACT_OVERRIDES = {
+  "adams.house.gov": "https://adamsforms.house.gov/contact/",
   "adamsmith.house.gov": "https://adamsmith.house.gov/contact/email-me",
   "aderholt.house.gov": "https://aderholt.house.gov/contact-robert",
   "adriansmith.house.gov": "https://adriansmith.house.gov/contact",
@@ -36,6 +39,7 @@ export const CONTACT_OVERRIDES = {
   "balderson.house.gov": "https://balderson.house.gov/news/email",
   "balint.house.gov": "https://balint.house.gov/contact",
   "barr.house.gov": "https://barr.house.gov/email-me",
+  "barragan.house.gov": "https://barragan.house.gov/email/",
   "barrymoore.house.gov": "https://barrymoore.house.gov/contact",
   "bean.house.gov": "https://bean.house.gov/contact",
   "beatty.house.gov": "https://beatty.house.gov/contact",
@@ -54,6 +58,7 @@ export const CONTACT_OVERRIDES = {
   "bost.house.gov": "https://bost.house.gov/email",
   "boyle.house.gov": "https://boyle.house.gov/contact/email",
   "brecheen.house.gov": "https://brecheen.house.gov/contact/email-me.htm",
+  "buchanan.house.gov": "https://buchanan.house.gov/contact/email-me/",
   "buddycarter.house.gov": "https://buddycarter.house.gov/news/email/",
   "budzinski.house.gov": "https://budzinski.house.gov/contact",
   "burchett.house.gov": "https://burchett.house.gov/contact/email-me",
@@ -226,6 +231,7 @@ export const CONTACT_OVERRIDES = {
   "marymiller.house.gov": "https://marymiller.house.gov/contact",
   "massie.house.gov": "https://massie.house.gov/contact",
   "mast.house.gov": "https://mast.house.gov/share-your-opinion",
+  "matsui.house.gov": "https://matsui.house.gov/contact",
   "maxmiller.house.gov": "https://maxmiller.house.gov/contact",
   "mcbath.house.gov": "https://mcbath.house.gov/contact/email-me/",
   "mccaul.house.gov": "https://mccaul.house.gov/contact/email-me",
@@ -244,6 +250,7 @@ export const CONTACT_OVERRIDES = {
   "mfume.house.gov": "https://mfume.house.gov/contact/email-me",
   "mikejohnson.house.gov": "https://mikejohnson.house.gov/contact",
   "mikerogers.house.gov": "https://mikerogers.house.gov/contact",
+  "mikethompson.house.gov": "https://mikethompsonforms.house.gov/contact",
   "miller.house.gov": "https://miller.house.gov/contact/staff",
   "millermeeks.house.gov": "https://millermeeks.house.gov/contact-mariannette",
   "mills.house.gov": "https://mills.house.gov/contact",
@@ -270,6 +277,7 @@ export const CONTACT_OVERRIDES = {
   "ogles.house.gov": "https://ogles.house.gov/contact",
   "omar.house.gov": "https://omar.house.gov/contact/email-me",
   "owens.house.gov": "https://owens.house.gov/contact",
+  "pallone.house.gov": "https://palloneforms.house.gov/contact/",
   "palmer.house.gov": "https://palmer.house.gov/contact",
   "panetta.house.gov": "https://panetta.house.gov/contact",
   "pappas.house.gov": "https://pappas.house.gov/contact/email-me",
@@ -294,16 +302,20 @@ export const CONTACT_OVERRIDES = {
   "rouzer.house.gov": "https://rouzer.house.gov/news/email",
   "roy.house.gov": "https://roy.house.gov/contact/email-me",
   "ruiz.house.gov": "https://ruiz.house.gov/contact/email",
+  "rutherford.house.gov": "https://rutherford.house.gov/EmailUS",
   "salazar.house.gov": "https://salazar.house.gov/contact",
   "sarajacobs.house.gov": "https://sarajacobs.house.gov/contact/email-me",
+  "scalise.house.gov": "https://scaliseforms.house.gov/contact/",
   "scanlon.house.gov": "https://scanlon.house.gov/contact",
   "schakowsky.house.gov": "https://schakowsky.house.gov/contact/email-me",
   "schneider.house.gov": "https://schneider.house.gov/contact/email-me",
   "scholten.house.gov": "https://scholten.house.gov/services/contact",
   "schrier.house.gov": "https://schrier.house.gov/contact",
+  "schweikert.house.gov": "https://schweikert.house.gov/email/",
   "scottpeters.house.gov": "https://scottpeters.house.gov/email-me",
   "sessions.house.gov": "https://sessions.house.gov/email-me",
   "sewell.house.gov": "https://sewell.house.gov/email-me",
+  "sherman.house.gov": "http://sherman.house.gov/contact/opinion",
   "shontelbrown.house.gov": "https://shontelbrown.house.gov/contact",
   "simpson.house.gov": "https://simpson.house.gov/News/email",
   "smucker.house.gov": "https://smucker.house.gov/contact",

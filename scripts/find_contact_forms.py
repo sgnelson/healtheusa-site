@@ -37,16 +37,36 @@ POSITIVE_KEYWORDS = [
     (r"email[-_]", 2),
     (r"contact", 1),
 ]
+# Same weights, checked against the anchor's visible text instead of the
+# href — several sites (e.g. Kaine) use wording in the link text that isn't
+# reflected in the URL slug at all.
+POSITIVE_TEXT_KEYWORDS = [
+    (r"\bemail\s*(me|us)?\b", 4),
+    (r"write\s*to", 4),
+    (r"share\s*your\s*opinion", 4),
+    (r"get\s*in\s*touch", 3),
+    (r"contact\s*form", 3),
+    (r"\bcontact\b", 1),
+]
+# Disqualifies a candidate outright — checked against BOTH href and visible
+# text, since a standardized nav item like "Website Problem" often lives at
+# a URL containing nothing but the word "contact" (e.g. /contact/website-
+# problem), which would otherwise tie or beat the real "Email Me" link.
 NEGATIVE_KEYWORDS = [
-    "unsubscribe", "newsletter", "press", "media", "flag", "tour",
-    "intern", "job", "career", "privacy", "sitemap", "accessibility",
-    "office-locations", "offices", "casework", "district-office",
-    "town-hall", "event", "subscribe", "location",
+    "unsubscribe", "newsletter", "press release", "press", "media", "flag",
+    "tour", "intern", "job", "career", "privacy", "sitemap", "accessibility",
+    "office location", "office-locations", "offices", "casework",
+    "district office", "district-office", "town hall", "town-hall", "event",
+    "subscribe", "location", "website problem", "website-problem",
+    "web problem", "report a problem", "help with a federal agency",
+    "help-federal-agency", "federal agency",
     "wp-content", "wp-includes", ".css", ".js", ".png", ".jpg", ".svg",
     ".woff", ".ico",
 ]
 
 HREF_RE = re.compile(r'href=["\']([^"\']+)["\']', re.I)
+ANCHOR_RE = re.compile(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', re.I | re.S)
+TAG_RE = re.compile(r'<[^>]+>')
 
 
 def curl_get(url, timeout=12):
@@ -72,36 +92,54 @@ def curl_status(url, timeout=12):
         return "000"
 
 
-def score_href(href, base_url):
-    low = href.lower()
+def score_candidate(href, text, base_url):
+    low_href = href.lower()
+    low_text = text.lower()
+    combined = low_href + " " + low_text
     for neg in NEGATIVE_KEYWORDS:
-        if neg in low:
+        if neg in combined:
             return None  # disqualified
+
     score = 0
     matched = False
     for pattern, weight in POSITIVE_KEYWORDS:
-        if re.search(pattern, low):
+        if re.search(pattern, low_href):
+            score += weight
+            matched = True
+    for pattern, weight in POSITIVE_TEXT_KEYWORDS:
+        if re.search(pattern, low_text):
             score += weight
             matched = True
     if not matched:
         return None
-    # Prefer shorter, more specific-looking paths slightly.
-    score -= min(len(href) / 200.0, 1.0)
+
+    # Mild length penalty based on the URL's path (ignore scheme+host, so an
+    # external-domain link like palloneforms.house.gov/contact/ isn't
+    # unfairly penalized next to a same-site relative href of similar
+    # specificity).
+    path = urlparse(urljoin(base_url, href)).path
+    score -= min(len(path) / 200.0, 1.0)
     return score
 
 
 def find_candidates(html, base_url):
-    hrefs = set(HREF_RE.findall(html))
     scored = []
-    for href in hrefs:
+    seen_pairs = set()
+    for href, inner in ANCHOR_RE.findall(html):
         if href.startswith("#") or href.startswith("mailto:") or href.startswith("tel:"):
             continue
-        full = urljoin(base_url, href)
-        s = score_href(href, base_url)
+        text = TAG_RE.sub(" ", inner)
+        text = re.sub(r"\s+", " ", text).strip()
+        key = (href, text)
+        if key in seen_pairs:
+            continue
+        seen_pairs.add(key)
+        s = score_candidate(href, text, base_url)
         if s is not None:
-            scored.append((s, full))
+            scored.append((s, urljoin(base_url, href)))
+
     scored.sort(key=lambda x: -x[0])
-    # de-dup by url, keep order
+    # de-dup by resolved url, keep highest-scored occurrence
     seen = set()
     out = []
     for s, url in scored:
@@ -155,7 +193,7 @@ def main():
             rows.append(tuple(parts[:4]))
 
     results = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as ex:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
         for i, res in enumerate(ex.map(resolve_one, rows)):
             results.append(res)
             print(f"{i+1}/{len(rows)}  {res[4]:18s} {res[0]}", file=sys.stderr)
